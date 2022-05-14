@@ -1,2 +1,2 @@
 # TradingView
-Pine Script Indicator and Strategy, Graph Drawings, Layouts, and Templates
+Pine Script Indicators and Strategies, Graph Drawings, Layouts, and Templates
