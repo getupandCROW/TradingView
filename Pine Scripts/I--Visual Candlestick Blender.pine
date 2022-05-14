@@ -1,0 +1,149 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © BlueJayBird
+//@version=4
+study(title="Visual Candlestick Blender, by @BlueJayBird", shorttitle="VCB", overlay=true)
+
+// Style
+thickness = 2
+transp_ma = 40
+transp_fill = 90
+transp_fill_20 = 80
+securityGap = barmerge.gaps_off 
+securityLookahead = barmerge.lookahead_on
+
+// ------------------------------------- Enable VCB
+enable1 = input(defval = true,  title = "Enable Visual Candlestick Blendings 1 (VCB1)")
+enable2 = input(defval = false, title = "Enable Visual Candlestick Blendings 2 (VCB2)")
+enable3 = input(defval = false, title = "Enable Visual Candlestick Blendings 3 (VCB3)")
+enable4 = input(defval = false, title = "Enable Visual Candlestick Blendings 4 (VCB4)")
+
+// ------------------------------------- Resolutions VCB
+res1 = input(title = "VCB1 Resolution", defval = "60", type = input.resolution)
+res2 = input(title = "VCB2 Resolution", defval = "240", type = input.resolution)
+res3 = input(title = "VCB3 Resolution", defval = "D", type = input.resolution)
+res4 = input(title = "VCB4 Resolution", defval = "W", type = input.resolution)
+
+// ------------------------------------- VCB Plotting 1
+o1 = security(syminfo.ticker, res1, open, securityGap, securityLookahead)
+h1 = security(syminfo.ticker, res1, high, securityGap, securityLookahead)
+l1 = security(syminfo.ticker, res1, low, securityGap, securityLookahead)
+c1 = security(syminfo.ticker, res1, close, securityGap, securityLookahead)
+palette1 = c1 > o1 ? color.lime : color.red
+paletteTraslucid1 = c1 > o1 ? color.new(color.lime, 50) : color.new(color.red, 50)
+dashedWorkaround1 = bar_index % 2 == 0 ? palette1 : paletteTraslucid1
+plot(enable1 ? o1 : na, title="O1", color=palette1, linewidth=thickness + 1, transp=transp_ma, editable=true, style=plot.style_stepline)
+plot(enable1 ? h1 : na, title="H1", color=dashedWorkaround1, linewidth=thickness, transp=70, editable=true, style=plot.style_stepline)
+plot(enable1 ? l1 : na, title="L1", color=dashedWorkaround1, linewidth=thickness, transp=70, editable=true, style=plot.style_stepline)
+plot(enable1 ? c1 : na, title="C1", color=palette1, linewidth=thickness + 1, transp=transp_ma, editable=true, style=plot.style_stepline)
+
+// ------------------------------------- VCB Plotting 2
+o2 = security(syminfo.ticker, res2, open, securityGap, securityLookahead)
+h2 = security(syminfo.ticker, res2, high, securityGap, securityLookahead)
+l2 = security(syminfo.ticker, res2, low, securityGap, securityLookahead)
+c2 = security(syminfo.ticker, res2, close, securityGap, securityLookahead)
+palette2 = c2 > o2 ? color.aqua : color.yellow
+paletteTraslucid2 = c2 > o2 ? color.new(color.aqua, 50) : color.new(color.yellow, 50)
+dashedWorkaround2 = bar_index % 2 == 0 ? palette2 : paletteTraslucid2
+plot(enable2 ? o2 : na, title="O2", color=palette2, linewidth=thickness + 1, transp=transp_ma, editable=true, style=plot.style_stepline)
+plot(enable2 ? h2 : na, title="H2", color=dashedWorkaround2, linewidth=thickness, transp=70, editable=true, style=plot.style_stepline)
+plot(enable2 ? l2 : na, title="L2", color=dashedWorkaround2, linewidth=thickness, transp=70, editable=true, style=plot.style_stepline)
+plot(enable2 ? c2 : na, title="C2", color=palette2, linewidth=thickness + 1, transp=transp_ma, editable=true, style=plot.style_stepline)
+
+// ------------------------------------- VCB Plotting 3
+o3 = security(syminfo.ticker, res3, open, securityGap, securityLookahead)
+h3 = security(syminfo.ticker, res3, high, securityGap, securityLookahead)
+l3 = security(syminfo.ticker, res3, low, securityGap, securityLookahead)
+c3 = security(syminfo.ticker, res3, close, securityGap, securityLookahead)
+palette3 = c3 > o3 ? color.orange : color.fuchsia
+paletteTraslucid3 = c3 > o3 ? color.new(color.orange, 50) : color.new(color.fuchsia, 50)
+dashedWorkaround3 = bar_index % 2 == 0 ? palette3 : paletteTraslucid3
+plot(enable3 ? o3 : na, title="O3", color=palette3, linewidth=thickness + 1, transp=transp_ma, editable=true, style=plot.style_stepline)
+plot(enable3 ? h3 : na, title="H3", color=dashedWorkaround3, linewidth=thickness, transp=70, editable=true, style=plot.style_stepline)
+plot(enable3 ? l3 : na, title="L3", color=dashedWorkaround3, linewidth=thickness, transp=70, editable=true, style=plot.style_stepline)
+plot(enable3 ? c3 : na, title="C3", color=palette3, linewidth=thickness + 1, transp=transp_ma, editable=true, style=plot.style_stepline)
+
+// ------------------------------------- VCB Plotting 4
+o4 = security(syminfo.ticker, res4, open, securityGap, securityLookahead)
+h4 = security(syminfo.ticker, res4, high, securityGap, securityLookahead)
+l4 = security(syminfo.ticker, res4, low, securityGap, securityLookahead)
+c4 = security(syminfo.ticker, res4, close, securityGap, securityLookahead)
+palette4 = c4 > o4 ? color.yellow : color.orange
+paletteTraslucid4 = c4 > o4 ? color.new(color.yellow, 50) : color.new(color.orange, 50)
+dashedWorkaround4 = bar_index % 2 == 0 ? palette4 : paletteTraslucid4
+plot(enable4 ? o4 : na, title="O4", color = palette4, linewidth = thickness + 1, transp = transp_ma, editable = true, style = plot.style_stepline)
+plot(enable4 ? h4 : na, title="H4", color = dashedWorkaround4, linewidth = thickness, transp = 70, editable = true, style = plot.style_stepline)
+plot(enable4 ? l4 : na, title="L4", color = dashedWorkaround4, linewidth = thickness, transp = 70, editable = true, style = plot.style_stepline)
+plot(enable4 ? c4 : na, title="C4", color = palette4, linewidth = thickness + 1, transp = transp_ma, editable = true, style = plot.style_stepline)
+
+// ------------------------------------- Enable Time Chartlines (CL)
+enableTLc = input(defval = false, type = input.bool, title = "Enable Time Chartlines 1h (TC1)")
+enableTLb = input(defval = false, type = input.bool, title = "Enable Time Chartlines 4h (TC4)")
+enableTLa = input(defval = true, type = input.bool, title = "Enable Time Chartlines 1D (TCD)")
+enableTLd = input(defval = true, type = input.bool, title = "Enable Time Chartlines 1W (TCW)")
+
+// ------------------------------------- Color Time Chartlines
+colorC = input(title = "Color TC1", type = input.color, defval = color.gray)
+colorB = input(title = "Color TC4", type = input.color, defval = color.white)
+colorA = input(title = "Color TCD", type = input.color, defval = color.lime)
+colorD = input(title = "Color TCW", type = input.color, defval = color.aqua)
+transpTL = input(defval = 80, title = "Time Chartlines Transparency")
+
+targetTime0     = timestamp(year, month, dayofmonth, 00, 00, 00) //  1D
+targetTime1     = timestamp(year, month, dayofmonth, 01, 00, 00) // 1h
+targetTime2     = timestamp(year, month, dayofmonth, 02, 00, 00) // 1h
+targetTime3     = timestamp(year, month, dayofmonth, 03, 00, 00) // 1h
+targetTime4     = timestamp(year, month, dayofmonth, 04, 00, 00) //  4h
+targetTime5     = timestamp(year, month, dayofmonth, 05, 00, 00) // 1h
+targetTime6     = timestamp(year, month, dayofmonth, 06, 00, 00) // 1h
+targetTime7     = timestamp(year, month, dayofmonth, 07, 00, 00) // 1h
+targetTime8     = timestamp(year, month, dayofmonth, 08, 00, 00) //  4h
+targetTime9     = timestamp(year, month, dayofmonth, 09, 00, 00) // 1h
+targetTime10    = timestamp(year, month, dayofmonth, 10, 00, 00) // 1h
+targetTime11    = timestamp(year, month, dayofmonth, 11, 00, 00) // 1h
+targetTime12    = timestamp(year, month, dayofmonth, 12, 00, 00) //  4h
+targetTime13    = timestamp(year, month, dayofmonth, 13, 00, 00) // 1h
+targetTime14    = timestamp(year, month, dayofmonth, 14, 00, 00) // 1h
+targetTime15    = timestamp(year, month, dayofmonth, 15, 00, 00) // 1h
+targetTime16    = timestamp(year, month, dayofmonth, 16, 00, 00) //  4h
+targetTime17    = timestamp(year, month, dayofmonth, 17, 00, 00) // 1h
+targetTime18    = timestamp(year, month, dayofmonth, 18, 00, 00) // 1h
+targetTime19    = timestamp(year, month, dayofmonth, 19, 00, 00) // 1h
+targetTime20    = timestamp(year, month, dayofmonth, 20, 00, 00) //  4h
+targetTime21    = timestamp(year, month, dayofmonth, 21, 00, 00) // 1h
+targetTime22    = timestamp(year, month, dayofmonth, 22, 00, 00) // 1h
+targetTime23    = timestamp(year, month, dayofmonth, 23, 00, 00) // 1h
+targetTimeMonday = timestamp(year, month, dayofmonth, 00, 00, 00) // 1W
+// Time Ranges
+timeframeRangeA = timeframe.period == "1" or timeframe.period == "3" or timeframe.period == "5" or timeframe.period == "15" or timeframe.period == "30" or timeframe.period == "45" or timeframe.period == "60"
+timeframeRangeB = timeframe.period == "1" or timeframe.period == "3" or timeframe.period == "5" or timeframe.period == "15"
+timeframeRangeC = timeframe.period == "1" or timeframe.period == "3" or timeframe.period == "5"
+timeframeRangeD = timeframe.period == "1" or timeframe.period == "3" or timeframe.period == "5" or timeframe.period == "15" or timeframe.period == "30" or timeframe.period == "45" or timeframe.period == "60" or timeframe.period == "120" or timeframe.period == "180" or timeframe.period == "240" or timeframe.period == "D"
+// 1W
+bgcolor(targetTime0 == time and enableTLd and timeframeRangeD and dayofweek == dayofweek.monday ? colorD : na, transp=transpTL, editable=false)
+// 1D
+bgcolor(targetTime0 == time and enableTLa and timeframeRangeA and dayofweek != dayofweek.monday ? colorA : na, transp=transpTL, editable=false)
+// 4h
+bgcolor(targetTime4  == time and enableTLb and timeframeRangeB ? colorB : na, transp=transpTL, editable=false)
+bgcolor(targetTime8  == time and enableTLb and timeframeRangeB ? colorB : na, transp=transpTL, editable=false)
+bgcolor(targetTime12 == time and enableTLb and timeframeRangeB ? colorB : na, transp=transpTL, editable=false)
+bgcolor(targetTime16 == time and enableTLb and timeframeRangeB ? colorB : na, transp=transpTL, editable=false)
+bgcolor(targetTime20 == time and enableTLb and timeframeRangeB ? colorB : na, transp=transpTL, editable=false)
+// 1h
+bgcolor(targetTime1     == time and enableTLc and timeframeRangeC ? colorC : na, transp=transpTL, editable=false)
+bgcolor(targetTime2     == time and enableTLc and timeframeRangeC ? colorC : na, transp=transpTL, editable=false)
+bgcolor(targetTime3     == time and enableTLc and timeframeRangeC ? colorC : na, transp=transpTL, editable=false)
+bgcolor(targetTime5     == time and enableTLc and timeframeRangeC ? colorC : na, transp=transpTL, editable=false)
+bgcolor(targetTime6     == time and enableTLc and timeframeRangeC ? colorC : na, transp=transpTL, editable=false)
+bgcolor(targetTime7     == time and enableTLc and timeframeRangeC ? colorC : na, transp=transpTL, editable=false)
+bgcolor(targetTime9     == time and enableTLc and timeframeRangeC ? colorC : na, transp=transpTL, editable=false)
+bgcolor(targetTime10    == time and enableTLc and timeframeRangeC ? colorC : na, transp=transpTL, editable=false)
+bgcolor(targetTime11    == time and enableTLc and timeframeRangeC ? colorC : na, transp=transpTL, editable=false)
+bgcolor(targetTime13    == time and enableTLc and timeframeRangeC ? colorC : na, transp=transpTL, editable=false)
+bgcolor(targetTime14    == time and enableTLc and timeframeRangeC ? colorC : na, transp=transpTL, editable=false)
+bgcolor(targetTime15    == time and enableTLc and timeframeRangeC ? colorC : na, transp=transpTL, editable=false)
+bgcolor(targetTime17    == time and enableTLc and timeframeRangeC ? colorC : na, transp=transpTL, editable=false)
+bgcolor(targetTime18    == time and enableTLc and timeframeRangeC ? colorC : na, transp=transpTL, editable=false)
+bgcolor(targetTime19    == time and enableTLc and timeframeRangeC ? colorC : na, transp=transpTL, editable=false)
+bgcolor(targetTime21    == time and enableTLc and timeframeRangeC ? colorC : na, transp=transpTL, editable=false)
+bgcolor(targetTime22    == time and enableTLc and timeframeRangeC ? colorC : na, transp=transpTL, editable=false)
+bgcolor(targetTime23    == time and enableTLc and timeframeRangeC ? colorC : na, transp=transpTL, editable=false)

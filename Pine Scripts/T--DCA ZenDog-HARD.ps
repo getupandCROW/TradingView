@@ -1,0 +1,1583 @@
+// Commited version 390
+// IMPROVEMENTS/TODO:
+//- for better execution time use static bgcolor values
+//- remove disposable variables
+//- avoid concatenating strings
+//- improve UI code / tables with functions / lighter approaches
+//- fix bugs when BO/SL/TP are on the same candle
+
+
+// REMOVED
+// count_placed_safety_orders
+// glb_next_safety_order_qty 
+// glb_current_deal_prev_position_size
+
+
+//@author zendog123
+//@version=5
+strategy(title='Zendog V3 backtest DCA bot 3commas', shorttitle='Zendog V3 DCA', 
+ overlay=true, max_labels_count=500, pyramiding=99, initial_capital=10000, 
+  calc_on_order_fills=false, commission_type=strategy.commission.percent, commission_value=0.075)
+
+//used for labels
+cfg_theme = input.string(defval='dark', title='Chart theme', options=['light', 'dark'])
+theme_text_color = cfg_theme == 'dark' ? color.white : color.black
+
+f_print(_text) =>
+    // Create label on the first bar.
+    var _label = label.new(x=bar_index, y=na, text=str.tostring(_text), xloc=xloc.bar_index, yloc=yloc.price, color=color.blue, style=label.style_label_up, textcolor=theme_text_color, size=size.normal, textalign=text.align_left)
+    // On next bars, update the label's x and y position, and the text it displays.
+    if barstate.islastconfirmedhistory
+        label.set_xy(_label, bar_index, low * 0.99)
+        label.set_text(_label, str.tostring(_text))
+
+
+
+//----------------------------------------------
+//STRATEGY STUFF STARTS HERE
+
+
+//deal start & stop
+string _tooltip = "RSI-7: Use the builtin RSI-7 indicator (set trigger values down below)\nExternal Indicator: plugin an external indicator. Make sure the indicator plots a value and configure down below the trigger point (greater than X, less than X, equal to X) "
+deal_start_condition = false
+deal_start_type = input.string(defval='RSI-7', title='Deal start type', options=['RSI-7', 'External Indicator'], group='Deal start & end conditions', tooltip=_tooltip)
+
+string _tooltip1 = "Take Profit: End deal when the price reached a % TP\nExternal Indicator: End deal using an external indicator (configure settings below)"
+deal_end_condition = false
+deal_end_type = input.string(defval='Take Profit', title='Deal end type', options=['Take Profit', 'External Indicator'], group='Deal start & end conditions', tooltip=_tooltip1)
+
+string _tooltip2 = "Percentage: Open SO orders every N% of price movement. The price and size are calculated according to settings below (step scale, volume scale)\nExternal indicator: Open SO orders using an external indicator (configure settings below)"
+safety_order_condition = false
+safety_order_type = input.string(defval='Percentage', title='Safety order type', options=['Percentage', 'External Indicator'], group='Deal start & end conditions', tooltip=_tooltip2)
+
+string _tooltip3 = "Select external indicator"
+float external_indicator = input.source(defval=close, title='External indicator', group='Deal start & end conditions', tooltip=_tooltip3)
+
+string _tooltip4 = "Comparison for Deal start [greater or equal than, smaller or equal than, exactly equal]\nIf for example the external indicator is RSI deal could start when RSI7 <= 20"
+string deal_start_operation = input.string(defval='=', title='Deal start operator', group='Deal start & end conditions', options=['<=', '=', '>='], tooltip=_tooltip4)
+
+string _tooltip5 = "Value of external indicator for deal start"
+float deal_start_value = input.float(defval=-99999, title='Deal start value', group='Deal start & end conditions', tooltip=_tooltip5)
+
+string _tooltip6 = "Comparison for Deal end [greater or equal than, smaller or equal than, exactly equal]\nIf for example the external indicator is RSI deal could end when RSI7 >= 80"
+string deal_end_operation = input.string(defval='=', title='Deal end operator', group='Deal start & end conditions', options=['<=', '=', '>='], tooltip=_tooltip6)
+
+string _tooltip7 = "Value of External indicator for deal end"
+float deal_end_value = input.float(defval=-99999, title='Deal end value', group='Deal start & end conditions', tooltip=_tooltip7)
+
+string _tooltip8 = "Comparison for Safety order [greater or equal than, smaller or equal than, exactly equal]\nIf for example the external indicator is RSI trigger additional safety order every time RSI7 <= 10.\nATTENTION! This does not take into consideration the price value, so a low RSI does not mean a lower price as well"
+string safety_order_operation = input.string(defval='=', title='Safety order operator', group='Deal start & end conditions', options=['<=', '=', '>='], tooltip=_tooltip8)
+
+string _tooltip9 = "Value of external indicator to trigger safety orders"
+float safety_order_value = input.float(defval=-99999, title='Safety order value', group='Deal start & end conditions', tooltip=_tooltip9)
+
+string rsi_start_operation = input.string(defval='<=', title='RSI-7 Operation', group='RSI7 (if used for Deal start trigger)', options=['<=', '>='])
+rsi_start_value = input.int(defval=30, title='RSI-7 Value', group='RSI7 (if used for Deal start trigger)')
+
+
+
+//--------- DEAL START CONDITION ----------
+//RSI-7
+if deal_start_type == 'RSI-7' and rsi_start_operation == '<='
+    deal_start_condition := ta.rsi(close, 7) <= rsi_start_value
+else if deal_start_type == 'RSI-7' and rsi_start_operation == '>='
+    deal_start_condition := ta.rsi(close, 7) >= rsi_start_value
+    
+//MAYBE FOUND A BUG --> Leave all if's on this level otherwise they do not work
+else if deal_start_type == 'External Indicator' and deal_start_value != -99999 and deal_start_operation == '=' and external_indicator == deal_start_value
+    deal_start_condition := true
+else if deal_start_type == 'External Indicator' and deal_start_value != -99999 and deal_start_operation == '<=' and external_indicator <= deal_start_value
+    deal_start_condition := true
+else if deal_start_type == 'External Indicator' and deal_start_value != -99999 and deal_start_operation == '>=' and external_indicator >= deal_start_value
+    deal_start_condition := true
+else
+    deal_start_condition := false
+//-----------------------------------------
+
+
+
+//--------- DEAL END CONDITION -----------
+if deal_end_type == 'External Indicator' and deal_end_value != -99999 and deal_end_operation == '=' and external_indicator == deal_end_value
+    deal_end_condition := true
+else if deal_end_type == 'External Indicator' and deal_end_value != -99999 and deal_end_operation == '<=' and external_indicator <= deal_end_value
+    deal_end_condition := true
+else if deal_end_type == 'External Indicator' and deal_end_value != -99999 and deal_end_operation == '>=' and external_indicator >= deal_end_value
+    deal_end_condition := true
+else
+    deal_end_condition := false
+//-----------------------------------------
+
+
+
+//--------- SAFETY ORDER CONDITION -----------
+if safety_order_type == 'External Indicator' and safety_order_value != -99999 and safety_order_operation == '=' and external_indicator == safety_order_value
+    safety_order_condition := true
+else if safety_order_type == 'External Indicator' and safety_order_value != -99999 and safety_order_operation == '<=' and external_indicator <= safety_order_value
+    safety_order_condition := true
+else if safety_order_type == 'External Indicator' and safety_order_value != -99999 and safety_order_operation == '>=' and external_indicator >= safety_order_value
+    safety_order_condition := true
+else
+    safety_order_condition := false
+//-----------------------------------------
+
+
+
+//strategy timeframe limitation (run just between specific dates)
+limit_date_range = input.bool(title='Limit Date Range', defval=false, group='Backtest date range')
+
+//Input options that configure backtest date range
+start_time  = input.time(defval=timestamp('01 Jan 2022 00:00 +0000'), title='Start Time', group='Backtest date range')
+end_time    = input.time(defval=timestamp('31 Dec 2022 00:00 +0000'), title='End Time', group='Backtest date range')
+
+in_date_range = true
+if limit_date_range
+    in_date_range := time >= start_time and time <= end_time
+    
+else
+    in_date_range := true
+    
+
+
+
+cfg_strategy_type                           = input.string(title='Strategy Type', defval='long', options=['long', 'short'], group='Strategy settings')
+var bool IS_LONG = cfg_strategy_type == 'long'
+
+float cfg_base_order_size_usd               = input.float(title='Base order size', defval=1000, step=1000, group='Strategy settings')
+float cfg_safety_order_size_usd             = input.float(title='Safety order size', defval=700, step=100, group='Strategy settings')
+
+cfg_take_profit_type                        = input.string(title='Take Profit Type', defval='% From total volume', options=['% From base order', '% From total volume'], group='Strategy settings')
+float cfg_take_profit_perc                  = input.float(title='Take Profit (%)', minval=0.0, step=0.1, defval=2, group='Strategy settings')
+
+
+bool cfg_enable_stop_loss                   = input.bool(title='Enable Stop Loss', defval=false, group='Strategy settings')
+float cfg_stop_loss_perc                    = input.float(title='Stop Loss (%)', minval=0.0, step=0.1, defval=20, group='Strategy settings')
+float cfg_max_safety_orders                 = input.float(title='Max Safety Trades Count', defval=5, group='Strategy settings')
+float cfg_safety_order_price_deviation_perc = input.float(title='Price Deviation To Open Safety Trades (%)', minval=0.0, step=0.1, defval=3, group='Strategy settings')
+float cfg_safety_order_volume_scale         = input.float(title='Safety Order Volume Scale', defval=1, step=0.1, group='Strategy settings')
+float cfg_safety_order_price_step_scale     = input.float(title='Safety Order Step Scale', defval=1, step=0.1, group='Strategy settings')
+
+int cfg_planb_timeout                       = input.int(title='PLAN-B Timeout', defval=1, step=1, group='PLAN-B', tooltip='Timeout to activate PLAN-B. Use \'none\' in the dropdown below to disable PLAN-B')
+cfg_planb_timeout_type                      = input.string(title='', defval='none', options=['none', 'min', 'hour', 'day'], group='PLAN-B')
+cfg_planb_action                            = input.string(title='PLAN-B Action', defval='none', options=['none', 'paint only', 'close deal'], group='PLAN-B')
+float cfg_planb_take_profit                 = input.float(title='PLAN-B Close Deal (%) ', defval=0.5, step=0.1, group='PLAN-B', tooltip='Alternative % from total volume (versus position_avg_size) to use when PLAN-B is activated.\nIt is either a positive % for alternative TP or a negative % for alternative SL')
+
+get_planb_timeout() =>
+    float _timeout = 0
+    if cfg_planb_timeout_type == 'day'
+        _timeout := cfg_planb_timeout * 86400000
+    else if cfg_planb_timeout_type == 'hour'
+        _timeout := cfg_planb_timeout * 3600000
+    else if cfg_planb_timeout_type == 'min'
+        _timeout := cfg_planb_timeout * 60000
+
+//calculate only once
+var float glb_planb_timeout = get_planb_timeout()
+
+string _tooltip_bot_control     = 'If this is enabled the strategy can control some bot operations via Webhook calls.\n\nTo enable Webhook calls, check this option, complete Bot id and Email Token. After the strategy is configured, create an alert on the strategy, select Order fills only, and in the message field simply input {{strategy.order.alert_message}}.'
+bool cfg_enable_bot_control     = input.bool(title='Enable Bot Control Via Webhook', defval=false, group='3commas Bot Settings', tooltip=_tooltip_bot_control)
+string cfg_bot_id               = input.string(title='Bot id', defval='', group='3commas Bot Settings')
+string cfg_email_token          = input.string(title='Email token', defval='', group='3commas Bot Settings')
+bool cfg_exec_deal_start        = input.bool(title='Deal start', defval=true, group='3commas Bot Settings')
+bool cfg_exec_safety_order      = input.bool(title='Safety Orders', defval=true, group='3commas Bot Settings', 
+ tooltip="The strategy will send a message to add funds in the quote currency (for BTCUSDT quote is USDT). The amount of funds are calculated based on SO settings (size, volume steps). For exact values use the steps table.")
+bool cfg_exec_take_profit       = input.bool(title='Take profit deal stop', defval=true, group='3commas Bot Settings')
+bool cfg_exec_external_indicator= input.bool(title='External indicator deal stop', defval=true, group='3commas Bot Settings')
+bool cfg_exec_stop_loss         = input.bool(title='Stop Loss', defval=true, group='3commas Bot Settings')
+bool cfg_exec_planb_timeout     = input.bool(title='PLAN-B', defval=true, group='3commas Bot Settings')
+
+float cfg_commision_percent = input.float(title='Commision (%)', minval=0.0, step=0.001, defval=0.075, group='Broker')
+
+//visuals
+int cfg_decimals            = input.int(title='Decimals For Display', defval=2, group='Visuals')
+
+bool cfg_show_pnl_labels    = input.bool(title='Show PnL Labels', defval=true, group='Visuals')
+bool cfg_show_stats_table   = input.bool(title='Show Table With Statistics', defval=true, group='Visuals')
+bool cfg_show_settings_table= input.bool(title='Show Table With Strategy Settings', defval=false, group='Visuals')
+bool cfg_show_step_table    = input.bool(title='Show Table With Steps Similar To 3commas', defval=false, group='Visuals', tooltip='Make sure the Table with Strategy Settings is disabled because they use the same position\n\nIf the Safety orders type is not percentage all significant values will be replaced by - (dashes)')
+float cfg_steps_bo_price    = input.float(title='BO Entry Price For Steps Table', defval=0, group='Visuals', tooltip="Custom BO price used to calculate all table values. If this is not configured, the close value will be used")
+
+
+// How many safety orders were placed in current trade
+// REMOVED
+//var int count_placed_safety_orders      = 0
+
+//how many safety orders were executed in current trade
+var int count_executed_safety_orders    = 0
+
+var float glb_take_profit_price         = na
+var float glb_planb_timeout_price       = na
+var float glb_stop_loss_price           = na
+var float glb_base_order_price          = na
+var float glb_base_order_qty            = na
+var float glb_next_safety_order_price   = na
+
+// REMOVED
+// var float glb_next_safety_order_qty     = na
+
+//calculated based on BO size, SO size, and steps
+var float glb_required_capital          = na
+
+//used for stats and to calculate commision
+var float glb_total_volume              = 0
+
+//we use these variables to remember position size and use it
+//to calculate pnl after the deal was closed
+var float glb_current_deal_position_size    = na
+var float glb_current_deal_avg_price        = na
+
+// REMOVED
+//var float glb_current_deal_prev_position_size   = na
+
+// Used to try to obtain real prices for orders already executed
+var float glb_strategy_prev_netprofit           = 0
+
+//These remain global because of execution improvement
+var float glb_current_deal_close_value  = 0
+var float glb_current_deal_pnl          = 0
+
+//used as a flag for code logic 
+var bool glb_still_in_deal              = false
+
+var string glb_debug_text               = ""
+var debug_printed                       = false
+
+//used to avoid placing SO orders over and over again
+// needs to be reset once a trade is closed
+// false    - SO orders not placed
+// true     - SO orders already place
+var bool glb_so_orders_placed           = false
+
+//array that holds stats for used SO
+var int[] statsarray_safety_orders          = array.new_int(0)
+var int[] statsarray_safety_orders_timeout  = array.new_int(0)
+
+var int glb_dealstart_bar_index = 0
+var int[] statsarray_no_of_bars = array.new_int(0)
+
+var int glb_dealstart_bar_time          = 0
+var float[] statsarray_no_of_days       = array.new_float(0)
+var float stats_max_days_in_deal        = 0
+var stats_max_days_in_deal_start_time   = 0
+var stats_max_days_in_deal_close_time   = 0
+
+var bool firstdeal_started      = false
+var int firstdeal_bar_index     = 0
+var float firstdeal_start_price = 0
+var firstdeal_start_time        = 0
+
+var int lastdeal_close_bar_index    = 0
+var lastdeal_close_time             = 0
+
+//buy and hold stats
+var float bh_start_price        = 0
+var bh_start_time               = 0
+var float bh_end_price          = 0
+var bh_end_time                 = 0
+var bool bh_calculation_started = false
+
+//max drawndown in a deal vs avg position price
+var float stats_max_drawdown                = 0
+var stats_max_drawdown_time                 = 0
+var float stats_max_drawdown_equity_percent = 0
+
+//biggest percent deviation vs base order
+var float stats_biggest_dev                 = 0
+var stats_biggest_dev_time                  = 0
+
+var float stats_deals_started               = 0
+var float stats_deals_finished              = 0
+var float stats_deals_stop_loss_finished    = 0
+var float stats_deals_take_profit_finished  = 0
+var float stats_deals_timeout_finished      = 0
+
+//will keep profit / losses
+var float[] statsarray_winning_deals_pnl    = array.new_float(0)
+var float[] statsarray_losing_deals_pnl     = array.new_float(0)
+var float[] statsarray_timeout_deals_pnl    = array.new_float(0)
+
+//FUNCTIONS
+
+//so_index 0 is for BO, from 1..n on it is for SOn
+//calculates percent so no adjustment for long vs short
+stepped_deviation(so_index) =>
+    float _stepped_deviation = 0
+    if so_index > 0
+        for _i = 1 to so_index by 1
+            _stepped_deviation := _stepped_deviation + cfg_safety_order_price_deviation_perc * math.pow(cfg_safety_order_price_step_scale, _i - 1)
+    else
+        _stepped_deviation := 0
+
+
+
+// Returns requried price in order to achieve specific percentage
+steps_required_price(_bo_price, _avg_price, _pos_size, _take_profit_percent)=>
+    float _price = 0
+    if cfg_take_profit_type == '% From total volume'
+        if IS_LONG
+            _required_price = _avg_price * (1 + _take_profit_percent / 100)
+        else
+            _required_price = _avg_price * (1 - _take_profit_percent / 100)    
+            
+    else if cfg_take_profit_type == "% From base order"
+        if IS_LONG
+            _req_usdt       = cfg_base_order_size_usd * cfg_take_profit_perc / 100
+            _required_price = ((_avg_price * _pos_size) + _req_usdt) / _pos_size
+        else
+            _req_usdt       = cfg_base_order_size_usd * cfg_take_profit_perc / 100
+            _required_price = ((_avg_price * _pos_size) - _req_usdt) / _pos_size
+
+
+
+// Returns the % needed for _last_price to reach _required_price
+steps_required_percent(_last_price, _required_price)=>
+    if IS_LONG
+        _required_percent   = math.round((_required_price * 100 / _last_price) - 100, 2)
+    else
+        _required_percent   = math.round(100 - (_required_price * 100 / _last_price), 2)
+
+
+
+valid_stop_loss() =>
+    bool _valid = false
+    if cfg_enable_stop_loss 
+        //stop loss percent is bigger than last safety order percent
+        if (safety_order_type == 'Percentage' and cfg_stop_loss_perc > stepped_deviation(cfg_max_safety_orders))
+            _valid := true
+        else if (safety_order_type == 'External Indicator')
+            _valid := true
+        else
+            _valid := false
+    else
+        _valid := false
+
+
+next_so_price(so_index, _bo_price) =>
+    float _stepped_deviation = stepped_deviation(so_index)
+    if IS_LONG
+        float _next_so_price = _bo_price * (1 - _stepped_deviation / 100)
+    else
+        float _next_so_price = _bo_price * (1 + _stepped_deviation / 100)
+
+
+next_so_size_usd(so_index) =>
+    float _next_so_size_usd = cfg_safety_order_size_usd * math.pow(cfg_safety_order_volume_scale, so_index - 1)
+
+
+next_so_qty(so_index, _bo_price) =>
+    float _next_so_size_usd = next_so_size_usd(so_index)
+    float _next_so_qty = _next_so_size_usd / next_so_price(so_index, _bo_price)
+
+
+is_planb_timeout() =>
+    _res = false
+    if na(glb_dealstart_bar_time) == false
+        if time - glb_dealstart_bar_time >= glb_planb_timeout
+            _res := true
+    else
+        _res := false
+
+
+get_required_capital() =>
+    float _total_buy = 0
+    if cfg_max_safety_orders > 0
+        _total_buy := _total_buy + cfg_base_order_size_usd
+        for _i = 1 to cfg_max_safety_orders by 1
+            _total_buy := _total_buy + next_so_size_usd(_i)
+    else
+        _total_buy := _total_buy + cfg_base_order_size_usd
+
+
+get_days(start_time, end_time) =>
+    time_diff = end_time - start_time
+    diff_days = math.round(time_diff / 86400000, 1)
+
+
+get_timestring_from_seconds(seconds) =>
+    if seconds >= 86400
+        string _string = str.tostring(math.round(seconds / 86400, 1)) + ' days'
+    else if seconds >= 3600
+        string _string = str.tostring(math.round(seconds / 3600, 1)) + ' hours'
+    else
+        string _string = str.tostring(math.round(seconds / 60, 1)) + ' mins'
+
+
+get_timestring_from_days(days) =>
+    get_timestring_from_seconds(days * 86400)
+
+
+get_timespan_string(start_time, end_time) =>
+    _seconds_diff = (end_time - start_time) / 1000
+    get_timestring_from_seconds(_seconds_diff)
+
+
+//f_print(get_timestring_from_days(0.5) +"\n"+ get_timestring_from_days(0.01) +"\n"+ get_timestring_from_days(0.7))
+
+get_commission_for_volume(vol) =>
+    _commision = vol * cfg_commision_percent / 100
+
+
+get_final_pnl_new() =>
+    float _pnl = 0
+    if array.size(statsarray_losing_deals_pnl) > 0
+        _pnl := _pnl + array.sum(statsarray_losing_deals_pnl)
+
+    if array.size(statsarray_winning_deals_pnl) > 0
+        _pnl := _pnl + array.sum(statsarray_winning_deals_pnl)
+
+    //add or substract current deal openprofit
+    //commission is already substracted
+    _pnl := _pnl + strategy.openprofit
+
+
+get_final_pnl_prct_new() =>
+    get_final_pnl_new() * 100 / glb_required_capital
+
+
+// take_profit_price(_avg_price = strategy.position_avg_price, _position_size = strategy.position_size)=>
+take_profit_price(_avg_price = strategy.position_avg_price, _pos_size = strategy.position_size)=>
+    if cfg_take_profit_type == "% From total volume"
+        if IS_LONG
+            _tp_price = _avg_price * (1 + cfg_take_profit_perc/100)
+        else
+            _tp_price = _avg_price * (1 - cfg_take_profit_perc/100)
+    else if cfg_take_profit_type == "% From base order"
+        if IS_LONG
+            _tp_size_usd = cfg_base_order_size_usd * cfg_take_profit_perc / 100
+            _tp_price =  ((_avg_price * _pos_size) + _tp_size_usd) / _pos_size
+        else
+            _tp_size_usd = cfg_base_order_size_usd * cfg_take_profit_perc / 100
+            _tp_price =  ((_avg_price * _pos_size) - _tp_size_usd) / _pos_size
+
+
+planb_timeout_price() =>
+    if IS_LONG
+        _price = strategy.position_avg_price * (1 + float(cfg_planb_take_profit) / 100)
+        
+    else
+        _price = strategy.position_avg_price * (1 - float(cfg_planb_take_profit) / 100)
+
+
+stop_loss_price(_bo_price) =>
+    if IS_LONG
+        _bo_price * (1 - cfg_stop_loss_perc / 100)
+    else
+        _bo_price * (1 + cfg_stop_loss_perc / 100)
+
+
+take_profit_price_hit() =>
+    if IS_LONG
+        high >= glb_take_profit_price and strategy.position_size == 0
+    else
+        low <= glb_take_profit_price and strategy.position_size == 0
+
+
+planb_price_hit() =>
+    if IS_LONG
+        high >= glb_planb_timeout_price and strategy.position_size == 0
+    else
+        low <= glb_planb_timeout_price and strategy.position_size == 0
+
+
+stop_loss_price_hit() =>
+    bool _cond = false
+
+    if valid_stop_loss()
+        if IS_LONG
+            _cond := low <= glb_stop_loss_price and strategy.position_size == 0
+        else
+            _cond := high >= glb_stop_loss_price and strategy.position_size == 0
+    else
+        _cond := false
+
+
+get_current_dev_vs_bo_price() =>
+    if IS_LONG
+        _dev = low * 100 / glb_base_order_price - 100
+    else
+        _dev = 100 - high * 100 / glb_base_order_price
+
+
+get_current_drawdown_equity() =>
+    _deal_total_value = strategy.position_size * strategy.position_avg_price
+    if IS_LONG
+        _drawdown_actual_value = strategy.position_size * low
+        _drawdown_equity_percent = _drawdown_actual_value * 100 / _deal_total_value - 100
+    else
+        _drawdown_actual_value = strategy.position_size * high
+        _drawdown_equity_percent = 100 - _drawdown_actual_value * 100 / _deal_total_value
+
+
+// Tests the size of the position size
+is_deal_started() =>
+    bool _flag = false
+    if IS_LONG and strategy.position_size > 0
+        _flag := true
+    else if not IS_LONG and strategy.position_size < 0
+        _flag := true
+    else
+        _flag := false
+
+
+// After a deal is completed we need to reset specific variables
+was_deal_marked_as_finished()=>
+    // If we are not in a deal anymore but some global variable was not reset yet
+    if glb_still_in_deal == true
+        _state = false
+    else
+        _state = true
+
+
+//init array with 0 values
+init_stats_array_safety_orders() =>
+    for _i = 0 to cfg_max_safety_orders by 1
+        array.push(statsarray_safety_orders, 0)
+        array.push(statsarray_safety_orders_timeout, 0)
+
+
+get_3cbot_startdeal_json() =>
+    _string = '{"message_type":"bot", "bot_id":"' + cfg_bot_id + '", "email_token":"' + cfg_email_token + '", "delay_seconds":0, "pair":"' + str.tostring(syminfo.currency) + '_' + str.tostring(syminfo.basecurrency) + '"}'
+
+
+get_3cbot_stopdeal_json() =>
+    _string = '{"action": "close_at_market_price_all", "message_type":"bot", "bot_id":"' + cfg_bot_id + '", "email_token":"' + cfg_email_token + '", "delay_seconds":0, "pair":"' + str.tostring(syminfo.currency) + '_' + str.tostring(syminfo.basecurrency) + '"}'
+
+
+get_3cbot_addfundsinquote_json(add_volume = 0) =>
+    _string = '{"action": "add_funds_in_quote", "message_type":"bot", "bot_id":"' + cfg_bot_id + '", "email_token":"' + cfg_email_token + '", "delay_seconds":0, "volume":"' + str.tostring(add_volume) + '"}'
+
+
+
+get_month_string(month_number) =>
+    if month_number == 1
+        _string = 'Jan'
+    else if month_number == 2
+        _string = 'Feb'
+    else if month_number == 3
+        _string = 'Mar'
+    else if month_number == 4
+        _string = 'Apr'
+    else if month_number == 5
+        _string = 'May'
+    else if month_number == 6
+        _string = 'Jun'
+    else if month_number == 7
+        _string = 'Jul'
+    else if month_number == 8
+        _string = 'Aug'
+    else if month_number == 9
+        _string = 'Sep'
+    else if month_number == 10
+        _string = 'Oct'
+    else if month_number == 11
+        _string = 'Nov'
+    else if month_number == 12
+        _string = 'Dec'
+
+
+time_to_date_string(timeinms) =>
+    if timeinms > 0
+        _string = str.tostring(dayofmonth(timeinms), '00/') + get_month_string(month(timeinms)) + '/' + str.tostring(year(timeinms), '0000') + ' ' + str.tostring(hour(timeinms), '00:') + str.tostring(minute(timeinms), '00:') + str.tostring(second(timeinms), '00')
+    else
+        _string = ''
+
+get_bg_color_grey(row) =>
+    _bgcolor = row % 2 == 0 ? #CACACA : #E5E5E5
+
+get_bg_color_blue(transp=0) =>
+    _bgcolor = color.new(#006bb3, transp)
+
+get_bg_color_green(transp=0) =>
+    _bgcolor = color.new(#A6E59B, transp)
+
+get_bg_color_red(transp=0) =>
+    _bgcolor = color.new(#E59B9B, transp)
+
+get_bg_color_lightblue(transp=0) =>
+    _bgcolor = color.new(#00BFFF, transp)
+
+get_bg_color_orange(transp=0) =>
+    _bgcolor = color.new(#FFA500, transp)
+
+
+
+//stats for buy and hold return
+if in_date_range and bh_calculation_started == false
+    bh_start_price          := open
+    bh_start_time           := time
+    bh_calculation_started  := true
+    bh_end_price            := close
+    bh_end_time             := time_close
+
+
+//update stats for buy and hold as long as we're still inside date range
+if in_date_range
+    bh_end_price    := close
+    bh_end_time     := time_close
+
+
+//condition for base order
+if in_date_range and deal_start_condition and not is_deal_started() and was_deal_marked_as_finished()
+
+    //stats for the first deal
+    if firstdeal_started == false
+        firstdeal_started       := true
+        firstdeal_bar_index     := bar_index
+        firstdeal_start_price   := close
+        firstdeal_start_time    := time
+        init_stats_array_safety_orders()
+
+    glb_still_in_deal           := true
+    stats_deals_started         := stats_deals_started + 1
+    glb_dealstart_bar_index     := bar_index
+    glb_dealstart_bar_time      := time
+
+    // Adjust glb_strategy_prev_netprofit before starting a new deal if different than the pine script strategy
+    // This solves a bug when pine script sells at a sligthly different price than the close price.
+    // Case was found when closing deal from external indicator
+    if glb_strategy_prev_netprofit != strategy.netprofit
+        glb_strategy_prev_netprofit := strategy.netprofit
+
+
+    //how many coins
+    glb_base_order_qty := cfg_base_order_size_usd / close
+
+    //This value will be overwritten with the actual executed market price on the next candle
+    glb_base_order_price := close
+
+    // enter with market order because with limit order the open of next candle might be a bit different 
+    // than close of current candle and the deal might not start
+
+    _alert_human = 'D' + str.tostring(stats_deals_started) + '-BO (' + str.tostring(syminfo.basecurrency) + '-' + 
+     str.tostring(syminfo.currency) + (cfg_strategy_type == 'long' ? ' LONG' : ' SHORT') + ') | ' + 
+      str.tostring(glb_base_order_qty * glb_base_order_price) + ' ' + str.tostring(syminfo.currency)
+
+    if cfg_enable_bot_control and cfg_exec_deal_start
+        _alert_json = get_3cbot_startdeal_json()
+        strategy.entry(id='D' + str.tostring(stats_deals_started) + '-BO', direction=IS_LONG ? strategy.long : strategy.short, 
+         qty=glb_base_order_qty, alert_message=_alert_json)
+        alert(_alert_human, alert.freq_once_per_bar_close)
+    else
+        strategy.entry(id='D' + str.tostring(stats_deals_started) + '-BO', direction=IS_LONG ? strategy.long : strategy.short, 
+         qty=glb_base_order_qty)
+        alert(_alert_human, alert.freq_once_per_bar_close)
+
+
+    
+
+// if we are in a deal
+if is_deal_started() and not was_deal_marked_as_finished()
+    
+    // ------------------------
+    // ONLY BO WAS EXECUTED
+    // If the only executed order is BO, overwrite SL price and BO price and size based on executed values 
+    // taken from stragey.xxx variables
+    if strategy.opentrades == 1 and not glb_so_orders_placed
+        glb_so_orders_placed        := true
+        glb_base_order_price        := strategy.position_avg_price
+        glb_base_order_qty          := strategy.position_size
+        
+        count_executed_safety_orders:= 0
+        
+        glb_debug_text += "BO: "+str.tostring(math.round(glb_base_order_qty, cfg_decimals))+" * "+
+         str.tostring(math.round(glb_base_order_price, cfg_decimals))+"="+str.tostring(glb_base_order_qty * glb_base_order_price)+"\n"
+
+        // place all Percentage SO orders as limit orders
+        if cfg_max_safety_orders > 0 and safety_order_type == 'Percentage'
+            for _so_number = 1 to cfg_max_safety_orders
+                _next_so_price      = next_so_price(_so_number, glb_base_order_price)
+                _next_so_qty        = next_so_qty(_so_number, glb_base_order_price)
+                _next_so_size_usd   = next_so_size_usd(_so_number)
+                
+                //place safety order as limit order
+        
+                // ----------------------------
+                // I guess there is no reason to send human readeable alerts to the bot, so this section
+                // is commented out. Feel free to re-use this if your are interested in sending notifications at
+                // the same time the strategy order triggers (otherwise notifications are delayed until the next candle)
+                // ----------------------------
+        
+                // _alert = "D"+tostring(stats_deals_started)+"-SO"+tostring(_so_number)+" ("+
+                //  tostring(syminfo.basecurrency)+"_"+tostring(syminfo.currency)+
+                //   (cfg_strategy_type=="long"?" LONG":" SHORT") + ") | "+
+                //   tostring(_next_so_qty*_next_so_price)+" "+tostring(syminfo.currency)
+                // strategy.entry(id="D"+tostring(stats_deals_started)+"-SO" + tostring(_so_number),
+                //   long=IS_LONG, qty=_next_so_qty, limit=_next_so_price, alert_message=_alert)
+        
+                glb_debug_text += "SO"+str.tostring(_so_number)+": "+str.tostring(math.round(_next_so_qty, cfg_decimals))+"*"+
+                 str.tostring(math.round(_next_so_price, cfg_decimals))+"="+str.tostring(_next_so_qty * _next_so_price)+"\n"
+    
+                if cfg_enable_bot_control and cfg_exec_safety_order
+                    _alert_json = get_3cbot_addfundsinquote_json(_next_so_size_usd)
+                    strategy.entry(id='D' + str.tostring(stats_deals_started) + '-SO' + str.tostring(_so_number), 
+                     direction=IS_LONG ? strategy.long : strategy.short, qty=_next_so_qty, limit=_next_so_price, alert_message=_alert_json)
+                else
+                    strategy.entry(id='D' + str.tostring(stats_deals_started) + '-SO' + str.tostring(_so_number), 
+                     direction=IS_LONG ? strategy.long : strategy.short, qty=_next_so_qty, limit=_next_so_price)
+
+            //used for plot
+            glb_next_safety_order_price := next_so_price(1, glb_base_order_price)
+            
+        // create SL order as limit
+        if valid_stop_loss()
+            glb_stop_loss_price := stop_loss_price(glb_base_order_price)
+            
+            glb_debug_text += "SL: "+str.tostring(glb_stop_loss_price)+"\n"
+            
+            if cfg_enable_bot_control and cfg_exec_stop_loss
+                _alert_json = get_3cbot_stopdeal_json()
+                strategy.exit(id='D' + str.tostring(stats_deals_started) + '-SL', stop=glb_stop_loss_price, 
+                 when=is_deal_started(), alert_message=_alert_json)
+            else
+                // ----------------------------
+                // I guess there is no reason to send human readeable alerts to the bot, so this section
+                // is commented out. Feel free to re-use this if your are interested in sending notifications at
+                // the same time the strategy order triggers (otherwise notifications are delayed until the next candle)
+                // ----------------------------
+        
+                // _alert_human = "D"+tostring(stats_deals_started)+"-SL ("+
+                //  tostring(syminfo.basecurrency)+"_"+tostring(syminfo.currency)+
+                //   (cfg_strategy_type=="long"?" LONG":" SHORT")+") "
+                // strategy.exit(id="D"+tostring(stats_deals_started)+"-SL",
+                //   stop=glb_stop_loss_price, when=is_deal_started(), alert_message=_alert_human)
+        
+                strategy.exit(id='D' + str.tostring(stats_deals_started) + '-SL', stop=glb_stop_loss_price, when=is_deal_started())
+
+    
+    // ------------------------
+    // AT LEAST ONE SAFETY ORDER (PERCENTAGE) WAS EXECUTED IN THE MEANTIME
+    // Update statistics and send alerts
+    if strategy.opentrades > (count_executed_safety_orders + 1) and safety_order_type == 'Percentage'
+
+        for _i = count_executed_safety_orders+1 to strategy.opentrades
+            _next_so_price  = next_so_price(_i, glb_base_order_price)
+            _next_so_qty    = next_so_qty(_i, glb_base_order_price)
+            //delayed alert about previous SO execution
+            _alert_human = 'D' + str.tostring(stats_deals_started) + '-SO' + str.tostring(_i) + ' [delayed] (' +
+             str.tostring(syminfo.basecurrency) + '_' + str.tostring(syminfo.currency) + 
+              (cfg_strategy_type == 'long' ? ' LONG' : ' SHORT') + ') | ' + 
+               str.tostring(_next_so_price * _next_so_qty) + ' ' + str.tostring(syminfo.currency)
+            alert(_alert_human, alert.freq_once_per_bar_close)
+    
+        //update to current open trades
+        count_executed_safety_orders    := (strategy.opentrades - 1)
+        
+        //for visual plot
+        if count_executed_safety_orders < cfg_max_safety_orders
+            glb_next_safety_order_price := next_so_price(count_executed_safety_orders+1, glb_base_order_price)
+        else if count_executed_safety_orders == cfg_max_safety_orders
+            glb_next_safety_order_price := na
+
+
+    // ------------------------
+    // SAFETY ORDER FROM EXTERNAL INDICATOR
+    // Place safety order as market order at current close
+    if safety_order_type == 'External Indicator' and safety_order_condition == true and count_executed_safety_orders < cfg_max_safety_orders
+        count_executed_safety_orders    := count_executed_safety_orders + 1
+        _next_so_size_usd                = next_so_size_usd(count_executed_safety_orders)
+        _next_so_qty                     = _next_so_size_usd / close
+        
+        if cfg_enable_bot_control and cfg_exec_safety_order
+            _alert_json = get_3cbot_addfundsinquote_json(_next_so_size_usd)
+            strategy.entry(id='D' + str.tostring(stats_deals_started) + '-SO' + str.tostring(count_executed_safety_orders), 
+             direction=IS_LONG ? strategy.long : strategy.short, qty=_next_so_qty, alert_message=_alert_json)
+        else
+            strategy.entry(id='D' + str.tostring(stats_deals_started) + '-SO' + str.tostring(count_executed_safety_orders), 
+             direction=IS_LONG ? strategy.long : strategy.short, qty=_next_so_qty)
+
+        _alert_human = 'D' + str.tostring(stats_deals_started) + '-SO' + str.tostring(count_executed_safety_orders) + ' (' +
+         str.tostring(syminfo.basecurrency) + '_' + str.tostring(syminfo.currency) + 
+          (cfg_strategy_type == 'long' ? ' LONG' : ' SHORT') + ') | ' + 
+           str.tostring(_next_so_size_usd) + ' ' + str.tostring(syminfo.currency)
+        alert(_alert_human, alert.freq_once_per_bar_close)
+    
+
+    
+    // ------------------------
+    // GENERAL UPDATES FOR EACH CANDLE
+    // TAKE PROFIT
+    // Recalculate TP price based on current strategy.position_avg_price 
+    // and strategy.position_size and UPDATE ORDER
+    
+    if deal_end_type == "Take Profit"
+        glb_take_profit_price := take_profit_price()
+        
+        //Place or update TP order
+        if cfg_enable_bot_control and cfg_exec_take_profit
+            _alert_json = get_3cbot_stopdeal_json()
+            strategy.order(id='D' + str.tostring(stats_deals_started) + '-TP', limit=glb_take_profit_price, 
+             direction=IS_LONG ? strategy.short : strategy.long, qty=math.abs(strategy.position_size), 
+              when=is_deal_started(), alert_message=_alert_json)
+        else
+            // ----------------------------
+            // I guess there is no reason to send human readeable alerts to the bot, so this section
+            // is commented out. Feel free to re-use this if your are interested in sending notifications at
+            // the same time the strategy order triggers (otherwise notifications are delayed until the next candle)
+            // ----------------------------
+        
+            // _alert_human = "D"+tostring(stats_deals_started)+"-TP ("+
+            //  tostring(syminfo.basecurrency)+"_"+tostring(syminfo.currency)+
+            //   (cfg_strategy_type=="long"?" LONG":" SHORT")+") "
+            // strategy.order(id="D"+tostring(stats_deals_started)+"-TP", limit=glb_take_profit_price,
+            //  long=(IS_LONG ? false : true), qty=math.abs(strategy.position_size), when=is_deal_started(), alert_message=_alert_human)
+        
+            strategy.order(id='D' + str.tostring(stats_deals_started) + '-TP', limit=glb_take_profit_price, 
+             direction=IS_LONG ? strategy.short : strategy.long, qty=math.abs(strategy.position_size), 
+              when=is_deal_started())
+        
+        //hack because if clause has return type
+        string _dumb_string = ""
+        
+    else
+        glb_take_profit_price := na
+        
+        //hack because if clause has return type
+        string _dumb_string = ""
+        
+        
+    // PLANB - TIMEOUT REACHED. Calculate the price
+    if is_planb_timeout() and cfg_planb_action != 'none'
+        glb_planb_timeout_price := planb_timeout_price()
+
+    // Place or update PLANB order
+    if is_planb_timeout() and cfg_planb_action == 'close deal'
+        // Cancel TP order if any
+        strategy.cancel(id='D' + str.tostring(stats_deals_started) + '-TP')
+        if cfg_enable_bot_control and cfg_exec_planb_timeout
+            _alert_json = get_3cbot_stopdeal_json()
+            strategy.order(id='D' + str.tostring(stats_deals_started) + '-TIMEOUT', limit=glb_planb_timeout_price, 
+             direction=IS_LONG ? strategy.short : strategy.long, qty=math.abs(strategy.position_size), 
+              when=is_deal_started(), alert_message=_alert_json)
+        else
+            // ----------------------------
+            // I guess there is no reason to send human readable alerts to the bot, so this section
+            // is commented out. Feel free to re-use this if your are interested in sending notifications at
+            // the same time the strategy order triggers
+            // ----------------------------
+    
+            // _alert_human = "D"+tostring(stats_deals_started)+"-TIMEOUT ("+
+            //  tostring(syminfo.basecurrency)+"_"+tostring(syminfo.currency)+
+            //   (cfg_strategy_type=="long"?" LONG":" SHORT")+") "
+            // strategy.order(id="D"+tostring(stats_deals_started)+"-TIMEOUT", limit=glb_planb_timeout_price,
+            //  long=(IS_LONG?false:true), qty=math.abs(strategy.position_size), when=is_deal_started(), alert_message=_alert_human)
+    
+            strategy.order(id='D' + str.tostring(stats_deals_started) + '-TIMEOUT', limit=glb_planb_timeout_price, 
+             direction=IS_LONG ? strategy.short : strategy.long, qty=math.abs(strategy.position_size), 
+              when=is_deal_started())
+
+    
+    // ------------------------
+    // GENERAL STATISTICS
+
+    //save these variables for pushing stats after the deal is finished
+    glb_current_deal_position_size  := strategy.position_size
+    glb_current_deal_avg_price      := strategy.position_avg_price
+
+    //stats for max drawndown
+    if strategy.openprofit < stats_max_drawdown
+        stats_max_drawdown                  := strategy.openprofit
+        stats_max_drawdown_equity_percent   := get_current_drawdown_equity()
+        //approx
+        stats_max_drawdown_time             := time
+
+
+    // Biggest drop vs base order price
+    _current_dev_vs_bo_price = get_current_dev_vs_bo_price()
+    if _current_dev_vs_bo_price < stats_biggest_dev
+        stats_biggest_dev       := _current_dev_vs_bo_price
+        //approx
+        stats_biggest_dev_time  := time
+
+    
+    // DEBUG
+    // if strategy.opentrades == 1 and not debug_printed
+    //     label.new(bar_index, high, text="D"+str.tostring(stats_deals_started), tooltip=glb_debug_text, yloc=yloc.price, 
+    //      textalign=text.align_left, size=size.normal, style=label.style_label_down, textcolor=color.black, color=get_bg_color_green())
+    //     debug_printed   := true
+    
+
+
+// ----------------------------------
+// IS DEAL FINISHED ON THIS CANDLE?
+
+condition_take_profit               = false
+condition_stop_external_indicator   = false
+condition_stop_loss                 = false
+condition_planb_timeout             = false
+
+// If multiple conditions are met on the same candle the priority is:
+// 1. Stop loss
+// 2. Timeout
+// 3. Take profit 
+// 4. External indicator value hit
+if stop_loss_price_hit() and not is_deal_started() and not was_deal_marked_as_finished()
+    condition_stop_loss     := true
+else if planb_price_hit() and is_planb_timeout() and cfg_planb_action == 'close deal'
+    condition_planb_timeout := true
+else if deal_end_type == "Take Profit" and take_profit_price_hit() and not is_deal_started() and not was_deal_marked_as_finished()
+    condition_take_profit   := true
+else if deal_end_type == 'External Indicator' and deal_end_condition == true and is_deal_started() and not was_deal_marked_as_finished()
+    condition_stop_external_indicator := true
+    
+condition_to_cancel_open_orders     = condition_take_profit or condition_stop_external_indicator or condition_stop_loss or condition_planb_timeout
+
+//reset variables for next trade and push stats
+if condition_to_cancel_open_orders
+
+    strategy.cancel_all(when=condition_to_cancel_open_orders)
+    
+    //common stats for all cases
+    stats_deals_finished    := stats_deals_finished + 1
+
+    //add to Total Volume the curernt deal VOLUME up to this point (without exit order)
+    glb_total_volume        := glb_total_volume + (glb_current_deal_position_size * glb_current_deal_avg_price)
+
+    _current_days_in_deal = get_days(glb_dealstart_bar_time, time)
+    array.push(statsarray_no_of_bars, bar_index - glb_dealstart_bar_index)
+    array.push(statsarray_no_of_days, _current_days_in_deal)
+
+    if stats_max_days_in_deal <= _current_days_in_deal
+        stats_max_days_in_deal := _current_days_in_deal
+        //approx
+        stats_max_days_in_deal_start_time := glb_dealstart_bar_time
+        stats_max_days_in_deal_close_time := time
+
+    
+    //statistics that are specific to each close type
+    if condition_stop_loss
+        stats_deals_stop_loss_finished  := stats_deals_stop_loss_finished + 1
+
+        // Extracting PNL. This is different calculation for each deal close type
+        glb_current_deal_pnl        := strategy.netprofit - glb_strategy_prev_netprofit
+        glb_strategy_prev_netprofit := strategy.netprofit
+
+        glb_current_deal_close_value    := glb_current_deal_position_size * glb_stop_loss_price
+        glb_total_volume                := glb_total_volume + glb_current_deal_close_value
+
+        array.push(statsarray_losing_deals_pnl, glb_current_deal_pnl)
+
+        if cfg_show_pnl_labels
+            label.new(bar_index, glb_stop_loss_price, text=str.tostring(math.round(glb_current_deal_pnl, cfg_decimals)) + 
+             '  ' + str.tostring(syminfo.currency) + '\n' + get_timespan_string(glb_dealstart_bar_time, time), 
+              yloc=yloc.price, size=size.normal, style=label.style_label_down, textcolor=color.black, color=get_bg_color_red())
+
+        //delayed alert about deal close by stop loss
+        _alert_human = 'D' + str.tostring(stats_deals_started) + '-SL [delayed] (' + str.tostring(syminfo.basecurrency) + 
+         '_' + str.tostring(syminfo.currency) + (cfg_strategy_type == 'long' ? ' LONG' : ' SHORT') + ') | ' + 
+          str.tostring(math.round(glb_current_deal_pnl, cfg_decimals)) + ' ' + str.tostring(syminfo.currency) + 
+           ' | ' + get_timespan_string(glb_dealstart_bar_time, time)
+        alert(_alert_human, alert.freq_once_per_bar_close)
+
+
+    else if condition_planb_timeout
+        stats_deals_timeout_finished    := stats_deals_timeout_finished + 1
+
+        // Extracting PNL. This is different calculation for each deal close type
+        glb_current_deal_pnl        := strategy.netprofit - glb_strategy_prev_netprofit
+        glb_strategy_prev_netprofit := strategy.netprofit
+
+        //executes on open price
+        glb_current_deal_close_value    := glb_current_deal_position_size * open
+        glb_total_volume                := glb_total_volume + glb_current_deal_close_value
+
+        array.push(statsarray_timeout_deals_pnl, glb_current_deal_pnl)
+
+        if glb_current_deal_pnl >= 0
+            array.push(statsarray_winning_deals_pnl, glb_current_deal_pnl)
+        else
+            array.push(statsarray_losing_deals_pnl, glb_current_deal_pnl)
+
+        //increase SO array as well but also a separate that holds timeout deals count
+        array.set(statsarray_safety_orders, count_executed_safety_orders, array.get(statsarray_safety_orders, count_executed_safety_orders) + 1)
+        array.set(statsarray_safety_orders_timeout, count_executed_safety_orders, array.get(statsarray_safety_orders_timeout, count_executed_safety_orders) + 1)
+
+        if cfg_show_pnl_labels
+            label.new(bar_index, glb_planb_timeout_price, text='' + str.tostring(math.round(glb_current_deal_pnl, cfg_decimals)) + 
+             '  ' + str.tostring(syminfo.currency) + '\n' + get_timespan_string(glb_dealstart_bar_time, time), 
+              yloc=yloc.price, size=size.normal, style=label.style_label_down, textcolor=color.black, color=get_bg_color_lightblue())
+
+        //delayed alert about deal close by timeout
+        _alert_human = 'D' + str.tostring(stats_deals_started) + '-TIMEOUT [delayed] (' + 
+         str.tostring(syminfo.basecurrency) + '_' + str.tostring(syminfo.currency) + 
+          (cfg_strategy_type == 'long' ? ' LONG' : ' SHORT') + ') | ' + str.tostring(math.round(glb_current_deal_pnl, cfg_decimals)) + 
+           ' ' + str.tostring(syminfo.currency) + ' | ' + get_timespan_string(glb_dealstart_bar_time, time)
+        alert(_alert_human, alert.freq_once_per_bar_close)
+
+
+    //we consider that deal closed with any SO, if not closed with SL
+    else if condition_take_profit
+        array.set(statsarray_safety_orders, count_executed_safety_orders, array.get(statsarray_safety_orders, count_executed_safety_orders) + 1)
+        stats_deals_take_profit_finished    := stats_deals_take_profit_finished + 1
+
+        // Extracting PNL. This is different calculation for each deal close type
+        glb_current_deal_pnl        := strategy.netprofit - glb_strategy_prev_netprofit
+        glb_strategy_prev_netprofit := strategy.netprofit
+
+        glb_current_deal_close_value    := glb_current_deal_position_size * glb_take_profit_price
+        glb_total_volume                := glb_total_volume + glb_current_deal_close_value
+
+        array.push(statsarray_winning_deals_pnl, glb_current_deal_pnl)
+
+        if cfg_show_pnl_labels
+            label.new(bar_index, glb_take_profit_price, text='' + str.tostring(math.round(glb_current_deal_pnl, cfg_decimals)) + 
+             '  ' + str.tostring(syminfo.currency) + '\n' + get_timespan_string(glb_dealstart_bar_time, time), 
+              yloc=yloc.price, size=size.normal, style=label.style_label_up, textcolor=color.black, color=get_bg_color_green())
+
+        //delayed alert about deal close by take profit
+        _alert_human = 'D' + str.tostring(stats_deals_started) + '-TP [delayed] (' + str.tostring(syminfo.basecurrency) + '_' + 
+         str.tostring(syminfo.currency) + (cfg_strategy_type == 'long' ? ' LONG' : ' SHORT') + ') | ' + 
+          str.tostring(math.round(glb_current_deal_pnl, cfg_decimals)) + ' ' + str.tostring(syminfo.currency) + 
+           ' | ' + get_timespan_string(glb_dealstart_bar_time, time)
+        alert(_alert_human, alert.freq_once_per_bar_close)
+
+
+    else if condition_stop_external_indicator
+        
+        // This order has to be placed after strategy.cancel_all(), otherwise it will get canceled as well
+        // It will get executed on the next bar open using market order
+        // Cancel TP order if any
+        if cfg_enable_bot_control and cfg_exec_external_indicator
+            _alert_json = get_3cbot_stopdeal_json()
+            strategy.order(id='D' + str.tostring(stats_deals_started) + '-EXT-IND', direction=IS_LONG ? strategy.short : strategy.long, 
+             qty=math.abs(strategy.position_size), alert_message=_alert_json)
+        else
+            // ----------------------------
+            // I guess there is no reason to send human readable alerts to the bot, so this section
+            // is commented out. Feel free to re-use this if your are interested in sending notifications at
+            // the same time the strategy order triggers
+            // ----------------------------
+    
+            // _alert_human = "D"+tostring(stats_deals_started)+"-EXT-IND ("+
+            //  tostring(syminfo.basecurrency)+"_"+tostring(syminfo.currency)+
+            //   (cfg_strategy_type=="long"?" LONG":" SHORT")+") "
+            // strategy.order(id='D' + str.tostring(stats_deals_started) + '-EXT-IND', direction=IS_LONG ? strategy.short : strategy.long, 
+            //  qty=math.abs(strategy.position_size), alert_message=_alert_human)
+         
+            strategy.order(id='D' + str.tostring(stats_deals_started) + '-EXT-IND', direction=IS_LONG ? strategy.short : strategy.long, 
+             qty=math.abs(strategy.position_size))
+
+        
+        
+         
+        array.set(statsarray_safety_orders, count_executed_safety_orders, array.get(statsarray_safety_orders, count_executed_safety_orders) + 1)
+        stats_deals_take_profit_finished    := stats_deals_take_profit_finished + 1
+
+        glb_current_deal_close_value    := glb_current_deal_position_size * close
+        glb_total_volume                := glb_total_volume + glb_current_deal_close_value
+        
+        // Extracting PNL before the deal is actually closed. Deal will get closed on 
+        // the open of next candle
+        // This is different calculation for each deal close type
+        glb_current_deal_pnl            := strategy.openprofit - get_commission_for_volume(glb_current_deal_close_value)
+        
+        glb_strategy_prev_netprofit     := strategy.netprofit + glb_current_deal_pnl
+
+        
+        if glb_current_deal_pnl >= 0
+            array.push(statsarray_winning_deals_pnl, glb_current_deal_pnl)
+        else
+            array.push(statsarray_losing_deals_pnl, glb_current_deal_pnl)
+        
+        if cfg_show_pnl_labels
+            // _text  = '' + str.tostring(math.round(glb_current_deal_pnl, cfg_decimals)) + 
+            //  '  ' + str.tostring(syminfo.currency) + '\n' + get_timespan_string(glb_dealstart_bar_time, time) + '\n'
+            // _text += 'strategy.netprofit: ' + str.tostring(strategy.netprofit) + '\n'
+            // _text += 'glb_prevnetp: ' + str.tostring(glb_strategy_prev_netprofit) + '\n'
+            // _text += 'strategy.openprofit: ' + str.tostring(strategy.openprofit) + '\n'
+            // _text += 'glb_current_deal_pnl: ' + str.tostring(glb_current_deal_pnl) + '\n'
+            // label.new(bar_index, close, text="EXT-IND", tooltip=_text, yloc=yloc.price, textalign=text.align_left,
+            //  size=size.normal, style=label.style_label_up, textcolor=color.black, color=get_bg_color_orange())
+              
+            label.new(bar_index, close, text='' + str.tostring(math.round(glb_current_deal_pnl, cfg_decimals)) + 
+             '  ' + str.tostring(syminfo.currency) + '\n' + get_timespan_string(glb_dealstart_bar_time, time), 
+              yloc=yloc.price, size=size.normal, style=label.style_label_up, textcolor=color.black, color=get_bg_color_orange())
+        
+        //delayed alert about deal close by take profit
+        _alert_human = 'D' + str.tostring(stats_deals_started) + '-EXT-IND [delayed] (' + str.tostring(syminfo.basecurrency) + '_' + 
+         str.tostring(syminfo.currency) + (cfg_strategy_type == 'long' ? ' LONG' : ' SHORT') + ') | ' + 
+          str.tostring(math.round(glb_current_deal_pnl, cfg_decimals)) + ' ' + str.tostring(syminfo.currency) + 
+           ' | ' + get_timespan_string(glb_dealstart_bar_time, time)
+        alert(_alert_human, alert.freq_once_per_bar_close)
+
+
+    //RESET GLOBALS AFTER DEAL COMPLETION
+    glb_still_in_deal                   := false
+    
+    lastdeal_close_bar_index            := bar_index
+    //approximate
+    lastdeal_close_time                 := time
+
+    glb_take_profit_price               := na
+    glb_planb_timeout_price             := na
+    glb_stop_loss_price                 := na
+    glb_base_order_price                := na
+    glb_base_order_qty                  := na
+    glb_next_safety_order_price         := na
+    
+    glb_so_orders_placed                := false
+    
+    // REMOVED
+    //glb_next_safety_order_qty           := na
+    
+    glb_current_deal_position_size      := na
+    
+    // REMOVED
+    // glb_current_deal_prev_position_size := na
+    glb_current_deal_avg_price          := na
+    glb_current_deal_close_value        := na
+    glb_current_deal_pnl                := 0
+
+    glb_debug_text                      := ""
+    debug_printed                       := false
+
+    glb_dealstart_bar_index             := na
+    glb_dealstart_bar_time              := na
+
+    // REMOVED
+    //count_placed_safety_orders          := 0
+    count_executed_safety_orders        := 0
+    
+    // label.new(bar_index, low*0.99, text=str.tostring(was_deal_marked_as_finished()) + "\n" + str.tostring(strategy.position_size), 
+    //  color=color.red)
+
+
+// ----------------------
+// PLOT STUFF
+_color_avg_price = theme_text_color
+_color_take_profit = get_bg_color_green(90)
+if is_planb_timeout() and cfg_planb_action != 'none'
+    _color_avg_price := get_bg_color_lightblue()
+
+if is_planb_timeout() and cfg_planb_action == 'close deal'
+    _color_take_profit := get_bg_color_green(100)
+
+
+p1 = plot(glb_take_profit_price, color=get_bg_color_green(), style=plot.style_circles, title='Take Profit')
+p2 = plot(strategy.position_avg_price, color=theme_text_color, style=plot.style_circles, title='Deal avg price')
+p3 = plot(glb_next_safety_order_price, color=get_bg_color_orange(), style=plot.style_circles, title='Safety order')
+p4 = plot(glb_stop_loss_price, color=get_bg_color_red(), style=plot.style_circles, title='Stop loss')
+p5 = plot(glb_planb_timeout_price, color=get_bg_color_lightblue(), style=plot.style_circles, title='PLAN-B')
+
+
+fill(p1, p2, color=_color_take_profit, title='Fill take profit')
+fill(p2, p3, color=get_bg_color_orange(90), title='Fill safety order')
+fill(p2, p5, color=get_bg_color_lightblue(90), title='Fill PLAN-B')
+
+// Normally fill stop loss from last so price
+fill(p3, p4, color=get_bg_color_red(90), title='Fill stop loss')
+
+// If SO are not configured or all SO were executed fill SL from AVG PRICE
+_col = (cfg_max_safety_orders == 0 or na(glb_next_safety_order_price)) ? get_bg_color_red(90) : get_bg_color_red(100)
+fill(p2, p4, color=_col, title='Fill stop loss') 
+
+
+// ---------------------
+// LAST CANDLE - DRAW ALL TABLES
+if barstate.islastconfirmedhistory
+    glb_required_capital := get_required_capital()
+
+    //if we are still in a deal, update some stats to current bar
+    _deal_in_progress = stats_deals_finished < stats_deals_started
+    if _deal_in_progress
+        lastdeal_close_bar_index := bar_index
+        //approximate
+        lastdeal_close_time := time
+        array.push(statsarray_no_of_bars, bar_index - glb_dealstart_bar_index)
+        array.push(statsarray_no_of_days, get_days(glb_dealstart_bar_time, time_close))
+        if stats_max_days_in_deal <= get_days(glb_dealstart_bar_time, time_close)
+            stats_max_days_in_deal := get_days(glb_dealstart_bar_time, time_close)
+            stats_max_days_in_deal_start_time := glb_dealstart_bar_time
+            stats_max_days_in_deal_close_time := time_close
+
+
+    //----------------------------------------------------------------
+    //data validation and a table with warnings
+    string _text_warnings = ''
+
+    if stats_deals_started == 0
+        _text_warnings := _text_warnings + ' - No deal started\n'
+
+    if stats_deals_finished == 0
+        _text_warnings := _text_warnings + ' - No deal finished\n'
+
+    if cfg_enable_stop_loss and valid_stop_loss() == false
+        _text_warnings := _text_warnings + ' - Stop loss is less than last safety order (should be more than ' + str.tostring(math.round(stepped_deviation(cfg_max_safety_orders), 2)) + '%' + ')\n'
+
+    if stepped_deviation(cfg_max_safety_orders) > 100
+        _text_warnings := _text_warnings + ' - Covered deviation via safety orders is over 100%\n'
+
+    if _text_warnings != ''
+        table warnings = table.new(position.bottom_center, columns=1, rows=2, frame_width=1, frame_color=color.red, border_width=1, border_color=color.red, bgcolor=color.red)
+        table.cell(warnings, 0, 0, 'WARNINGS!\n(Fix them, otherwise the stats are innacurate)', text_color=color.white, text_halign=text.align_center)
+        table.cell(warnings, 0, 1, _text_warnings, text_color=color.white, text_halign=text.align_left)
+    //----------------------------------------------------------------
+
+
+
+    //----------------------------------------------------------------
+    //a table with buying steps, volumes, prices similar to 3commas
+    //set custom values for bo entry price
+
+    if cfg_show_step_table
+        if cfg_steps_bo_price == 0 or na(cfg_steps_bo_price)
+            cfg_steps_bo_price := close
+            
+        _steps_bo_size = cfg_base_order_size_usd / cfg_steps_bo_price
+
+        table steps_amount = table.new(position.bottom_left, columns=12, rows=int(cfg_max_safety_orders) + 4, frame_width=1, frame_color=color.black, border_width=1, border_color=color.black, bgcolor=color.green)
+        table.cell(steps_amount, 0, 0, 'Order\nno', text_color=color.white, text_size=size.small)
+        table.cell(steps_amount, 1, 0, 'Deviation\n( % )', text_color=color.white, text_size=size.small)
+        table.cell(steps_amount, 2, 0, 'Size\n( ' + str.tostring(syminfo.basecurrency) + ' )', text_color=color.white, text_size=size.small)
+        table.cell(steps_amount, 3, 0, 'Volume\n( ' + str.tostring(syminfo.currency) + ' )', text_color=color.white, text_size=size.small)
+        table.cell(steps_amount, 4, 0, 'Price\n( ' + str.tostring(syminfo.currency) + ' )', text_color=color.white, text_size=size.small)
+        table.cell(steps_amount, 5, 0, 'Avg price\n( ' + str.tostring(syminfo.currency) + ' )', text_color=color.white, text_size=size.small)
+        
+        table.cell(steps_amount, 6, 0, 'Price for TP\n( ' + str.tostring(syminfo.currency) + ' )', text_color=color.white, text_size=size.small)
+        table.cell(steps_amount, 7, 0, '% change\nfor TP', text_color=color.white, text_size=size.small)
+        table.cell(steps_amount, 8, 0, '% change\nfor BEP', text_color=color.white, text_size=size.small)
+        
+        table.cell(steps_amount, 9, 0, 'Total size\n( ' + str.tostring(syminfo.basecurrency) + ' )', text_color=color.white, text_size=size.small)
+        table.cell(steps_amount, 10, 0, 'Total Vol\n( ' + str.tostring(syminfo.currency) + ' )', text_color=color.white, text_size=size.small)
+
+        float _steps_total_size = _steps_bo_size
+        float _steps_total_volume = cfg_steps_bo_price * _steps_bo_size
+
+        //base order
+        table.cell(steps_amount, 0, 1, 'BO', text_color=color.white, text_size=size.small)
+        table.cell(steps_amount, 1, 1, '0', text_color=color.white, text_size=size.small)
+        table.cell(steps_amount, 2, 1, str.tostring(math.round(_steps_bo_size, cfg_decimals)), text_color=color.white, text_size=size.small)
+        table.cell(steps_amount, 3, 1, str.tostring(math.round(cfg_steps_bo_price * _steps_bo_size, cfg_decimals)), text_color=color.white, text_size=size.small)
+        table.cell(steps_amount, 4, 1, str.tostring(math.round(cfg_steps_bo_price, cfg_decimals)), text_color=color.white, text_size=size.small)
+        table.cell(steps_amount, 5, 1, str.tostring(math.round(_steps_total_volume / _steps_total_size, cfg_decimals)), text_color=color.white, text_size=size.small)
+        
+        _req_price_for_tp = steps_required_price(cfg_steps_bo_price,  _steps_total_volume / _steps_total_size, _steps_total_size, cfg_take_profit_perc)
+        table.cell(steps_amount, 6, 1, str.tostring(math.round(_req_price_for_tp, cfg_decimals)), text_color=color.white, text_size=size.small)
+        table.cell(steps_amount, 7, 1, str.tostring(steps_required_percent(cfg_steps_bo_price, _req_price_for_tp)), text_color=color.white, text_size=size.small)
+        table.cell(steps_amount, 8, 1, str.tostring(steps_required_percent(cfg_steps_bo_price, cfg_steps_bo_price)), text_color=color.white, text_size=size.small)
+
+        table.cell(steps_amount, 9, 1, str.tostring(math.round(_steps_total_size, cfg_decimals)), text_color=color.white, text_size=size.small)
+        table.cell(steps_amount, 10, 1, str.tostring(_steps_total_volume), text_color=color.white, text_size=size.small)
+
+        float _steps_next_safety_order_price = 0 
+        float _steps_next_safety_order_qty = 0
+
+        if cfg_max_safety_orders > 0 and safety_order_type == 'Percentage'
+            for _i = 1 to cfg_max_safety_orders by 1
+                _steps_next_safety_order_price  := next_so_price(_i, cfg_steps_bo_price)
+                _steps_next_safety_order_qty    := next_so_qty(_i, cfg_steps_bo_price)
+
+                _steps_total_size   += _steps_next_safety_order_qty
+                _steps_total_volume += _steps_next_safety_order_qty * _steps_next_safety_order_price
+
+                table.cell(steps_amount, 0, _i + 2, str.tostring(_i), text_color=color.white, text_size=size.small)
+                table.cell(steps_amount, 1, _i + 2, str.tostring(stepped_deviation(_i)), text_color=color.white, text_size=size.small)
+                table.cell(steps_amount, 2, _i + 2, str.tostring(math.round(_steps_next_safety_order_qty, cfg_decimals)), text_color=color.white, text_size=size.small)
+                table.cell(steps_amount, 3, _i + 2, str.tostring(math.round(_steps_next_safety_order_qty * _steps_next_safety_order_price, cfg_decimals)), text_color=color.white, text_size=size.small)
+                table.cell(steps_amount, 4, _i + 2, str.tostring(math.round(_steps_next_safety_order_price, cfg_decimals)), text_color=color.white, text_size=size.small)
+                table.cell(steps_amount, 5, _i + 2, str.tostring(math.round(_steps_total_volume / _steps_total_size, cfg_decimals)), text_color=color.white, text_size=size.small)
+                
+                _req_price_for_tp := steps_required_price(cfg_steps_bo_price,  _steps_total_volume / _steps_total_size, _steps_total_size, cfg_take_profit_perc)
+                table.cell(steps_amount, 6, _i + 2, str.tostring(math.round(_req_price_for_tp, cfg_decimals)), text_color=color.white, text_size=size.small)
+                table.cell(steps_amount, 7, _i + 2, str.tostring(steps_required_percent(_steps_next_safety_order_price, _req_price_for_tp)), text_color=color.white, text_size=size.small)
+                table.cell(steps_amount, 8, _i + 2, str.tostring(steps_required_percent(_steps_next_safety_order_price, _steps_total_volume / _steps_total_size)), text_color=color.white, text_size=size.small)
+                
+                table.cell(steps_amount, 9, _i + 2, str.tostring(math.round(_steps_total_size, cfg_decimals)), text_color=color.white, text_size=size.small)
+                table.cell(steps_amount, 10, _i + 2, str.tostring(_steps_total_volume), text_color=color.white, text_size=size.small)
+        else if cfg_max_safety_orders > 0
+            float _steps_next_safety_order_qty_usd = 0
+            for _i = 1 to cfg_max_safety_orders by 1
+                _steps_next_safety_order_qty_usd := next_so_size_usd(_i)
+                _steps_total_volume += _steps_next_safety_order_qty_usd
+
+                table.cell(steps_amount, 0, _i + 2, str.tostring(_i), text_color=color.white, text_size=size.small)
+                table.cell(steps_amount, 1, _i + 2, "-", text_color=color.white, text_size=size.small)
+                table.cell(steps_amount, 2, _i + 2, "-", text_color=color.white, text_size=size.small)
+                table.cell(steps_amount, 3, _i + 2, str.tostring(math.round(_steps_next_safety_order_qty_usd, cfg_decimals)), text_color=color.white, text_size=size.small)
+                table.cell(steps_amount, 4, _i + 2, "-", text_color=color.white, text_size=size.small)
+                table.cell(steps_amount, 5, _i + 2, "-", text_color=color.white, text_size=size.small)
+                table.cell(steps_amount, 6, _i + 2, "-", text_color=color.white, text_size=size.small)
+                table.cell(steps_amount, 7, _i + 2, "-", text_color=color.white, text_size=size.small)
+                table.cell(steps_amount, 8, _i + 2, "-", text_color=color.white, text_size=size.small)
+                table.cell(steps_amount, 9, _i + 2, "-", text_color=color.white, text_size=size.small)
+                table.cell(steps_amount, 10, _i + 2, str.tostring(_steps_total_volume), text_color=color.white, text_size=size.small)
+    //----------------------------------------------------------------
+
+
+
+
+    //----------------------------------------------------------------
+    //a table with all kind of statistics about strategy results
+    if cfg_show_stats_table
+        int rowsforstats = array.size(statsarray_safety_orders) + 25
+        table sostats = table.new(position.top_right, columns=2, rows=rowsforstats, frame_width=1, frame_color=color.black)
+
+        _row = 0
+        table.cell(sostats, column=0, row=_row, text='Zendog DCA Backtester ' + str.tostring(syminfo.basecurrency) + ' / ' + str.tostring(syminfo.currency), text_halign=text.align_left, text_size=size.small, text_color=color.white, bgcolor=get_bg_color_blue())
+        table.cell(sostats, column=1, row=_row, text='', text_size=size.small, text_color=color.white, bgcolor=get_bg_color_blue())
+        _row := _row + 1
+
+        table.cell(sostats, column=0, row=_row, text='Status:', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        if _deal_in_progress
+            table.cell(sostats, column=1, row=_row, text='Deal in progress', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_red())
+        else if stats_deals_started == 0 and stats_deals_finished == 0
+            table.cell(sostats, column=1, row=_row, text='No deals', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_red())
+        else
+            table.cell(sostats, column=1, row=_row, text='All deals closed', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_green())
+        _row := _row + 1
+
+
+        table.cell(sostats, column=0, row=_row, text='Open deals:', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        if stats_deals_started - stats_deals_finished == 0
+            table.cell(sostats, column=1, row=_row, text='0', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_green())
+        else
+            _current_deal_total_value = strategy.position_size * strategy.position_avg_price
+            _current_deal_actual_value = strategy.position_size * close
+            float _current_deal_equity_percent = 0
+            if IS_LONG
+                _current_deal_equity_percent := _current_deal_actual_value * 100 / _current_deal_total_value - 100
+                _current_deal_equity_percent
+            else
+                _current_deal_equity_percent := 100 - _current_deal_actual_value * 100 / _current_deal_total_value
+
+            _text0 = str.tostring(stats_deals_started - stats_deals_finished) + ' deal\n'
+            _text0 := _text0 + str.tostring(math.round(strategy.openprofit, cfg_decimals)) + ' ' + str.tostring(syminfo.currency)
+            _text0 := _text0 + ' (' + str.tostring(math.round(_current_deal_equity_percent, 2)) + '%)\n'
+            _text0 := _text0 + str.tostring(get_timespan_string(glb_dealstart_bar_time, time_close)) + ', currently at SO ' + str.tostring(count_executed_safety_orders+1) + '\n'
+            _text0 := _text0 + '(start: ' + str.tostring(time_to_date_string(glb_dealstart_bar_time)) + ')'
+            table.cell(sostats, column=1, row=_row, text=_text0, text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_red())
+        _row := _row + 1
+
+        table.cell(sostats, column=0, row=_row, text='Finished deals:', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        table.cell(sostats, column=1, row=_row, text=str.tostring(stats_deals_finished), text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        _row := _row + 1
+
+
+        table.cell(sostats, column=0, row=_row, text='Winning deals:', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        if stats_deals_take_profit_finished == 0
+            table.cell(sostats, column=1, row=_row, text=str.tostring(array.size(statsarray_winning_deals_pnl)), text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        else
+            _text5 = ''
+            _text5 := _text5 + str.tostring(stats_deals_take_profit_finished)
+            _text5 := _text5 + ' (' + str.tostring(math.round(array.avg(statsarray_winning_deals_pnl), cfg_decimals))
+            _text5 := _text5 + ' ' + str.tostring(syminfo.currency) + ' on avg)'
+
+            table.cell(sostats, column=1, row=_row, text=_text5, text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_green())
+        _row := _row + 1
+
+
+        table.cell(sostats, column=0, row=_row, text='Losing deals:', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        if array.size(statsarray_losing_deals_pnl) == 0
+            table.cell(sostats, column=1, row=_row, text=str.tostring(array.size(statsarray_losing_deals_pnl)), text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_green())
+        else
+            _text6 = ''
+            _text6 := _text6 + str.tostring(array.size(statsarray_losing_deals_pnl))
+            _text6 := _text6 + ' (' + str.tostring(math.round(array.avg(statsarray_losing_deals_pnl), cfg_decimals))
+            _text6 := _text6 + ' ' + str.tostring(syminfo.currency) + ' on avg)'
+
+            table.cell(sostats, column=1, row=_row, text=_text6, text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_red())
+        _row := _row + 1
+
+
+
+        table.cell(sostats, column=0, row=_row, text='Timeout deals:', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        if stats_deals_timeout_finished == 0
+            table.cell(sostats, column=1, row=_row, text=str.tostring(stats_deals_timeout_finished), text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_green())
+        else
+            _text6 = ''
+            _text6 := _text6 + str.tostring(stats_deals_timeout_finished)
+            _text6 := _text6 + ' (' + str.tostring(math.round(array.avg(statsarray_timeout_deals_pnl), cfg_decimals))
+            _text6 := _text6 + ' ' + str.tostring(syminfo.currency) + ' on avg)'
+
+            table.cell(sostats, column=1, row=_row, text=_text6, text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_lightblue())
+        _row := _row + 1
+
+
+
+        table.cell(sostats, column=0, row=_row, text='Total time  ( Max  |  Avg time in deal ):', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        _text4 = '' + str.tostring(get_timespan_string(bh_start_time, bh_end_time)) + '    ( '
+        _text4 := _text4 + '' + get_timestring_from_days(array.max(statsarray_no_of_days)) + '  |  '
+        _text4 := _text4 + '' + get_timestring_from_days(array.avg(statsarray_no_of_days)) + ' )'
+        table.cell(sostats, column=1, row=_row, text=_text4, text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        _row := _row + 1
+
+
+        table.cell(sostats, column=0, row=_row, text='Total backtest:\n' + str.tostring(time_to_date_string(bh_start_time)) + '\n' + str.tostring(time_to_date_string(bh_end_time)), text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        table.cell(sostats, column=1, row=_row, text='Max days in deal:\n' + str.tostring(time_to_date_string(stats_max_days_in_deal_start_time)) + '\n' + str.tostring(time_to_date_string(stats_max_days_in_deal_close_time)), text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        _row := _row + 1
+
+
+        table.cell(sostats, column=0, row=_row, text='Required capital:', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        table.cell(sostats, column=1, row=_row, text=str.tostring(glb_required_capital) + ' ' + str.tostring(syminfo.currency), text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        _row := _row + 1
+
+        table.cell(sostats, column=0, row=_row, text='Profit:\n(after commision)', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+
+        _text1 = str.tostring(math.round(get_final_pnl_new(), cfg_decimals)) + ' ' + str.tostring(syminfo.currency)
+        _text1 := _text1 + ' (' + str.tostring(math.round(get_final_pnl_prct_new(), 2)) + ' %)\n'
+        if get_days(bh_start_time, bh_end_time) >= 1
+            _text1 := _text1 + str.tostring(math.round(get_final_pnl_prct_new() / get_days(bh_start_time, bh_end_time), 2)) + '% / day'
+        else
+            _text1 := _text1 + str.tostring(math.round(get_final_pnl_prct_new(), 2)) + '% / day'
+        table.cell(sostats, column=1, row=_row, text=_text1, text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        _row := _row + 1
+
+
+        //if date range is limited calculate between start and end date
+        _bh_equity = glb_required_capital / bh_start_price * bh_end_price - glb_required_capital
+        _bh_commision = get_commission_for_volume(glb_required_capital + glb_required_capital / bh_start_price * bh_end_price)
+        _bh_equity := _bh_equity - _bh_commision
+        _bh_prct_total = math.round(_bh_equity * 100 / glb_required_capital, 2)
+
+        table.cell(sostats, column=0, row=_row, text='Buy & hold return:\n(after commision)', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        _text2 = str.tostring(math.round(_bh_equity, cfg_decimals)) + ' ' + str.tostring(syminfo.currency)
+        _text2 := _text2 + ' (' + str.tostring(_bh_prct_total) + '%)\n'
+        if get_days(bh_start_time, bh_end_time) >= 1
+            _text2 := _text2 + str.tostring(math.round(_bh_prct_total / get_days(bh_start_time, bh_end_time), 2)) + '% / day'
+        else
+            _text2 := _text2 + str.tostring(math.round(_bh_prct_total, 2)) + '% / day'
+            _text2
+        table.cell(sostats, column=1, row=_row, text=_text2, text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        _row := _row + 1
+
+
+        table.cell(sostats, column=0, row=_row, text='Covered deviation:', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        table.cell(sostats, column=1, row=_row, text=str.tostring(math.round(stepped_deviation(cfg_max_safety_orders), 2)) + '%', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        _row := _row + 1
+
+
+        string _bef = valid_stop_loss() ? 'before SL' : ''
+        table.cell(sostats, column=0, row=_row, text='Max deviation:\n(Deal start price vs worst candle ' + _bef + ')', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        table.cell(sostats, column=1, row=_row, text=str.tostring(math.round(stats_biggest_dev, 2)) + '%\n' + '(' + time_to_date_string(stats_biggest_dev_time) + ')', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        _row := _row + 1
+
+
+        table.cell(sostats, column=0, row=_row, text='Max drawdown from breakeven:\n(Avg price vs worst candle ' + _bef + ')', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        table.cell(sostats, column=1, row=_row, text=str.tostring(math.round(stats_max_drawdown, cfg_decimals)) + ' ' + str.tostring(syminfo.currency) + ' (' + str.tostring(math.round(stats_max_drawdown_equity_percent, 2)) + '%)\n' + '(' + time_to_date_string(stats_max_drawdown_time) + ')', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        _row := _row + 1
+
+
+
+        table.cell(sostats, column=0, row=_row, text='Max # bars in deal:', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        table.cell(sostats, column=1, row=_row, text=str.tostring(array.max(statsarray_no_of_bars)), text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        _row := _row + 1
+
+
+        table.cell(sostats, column=0, row=_row, text='Avg # bars in deal:', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        table.cell(sostats, column=1, row=_row, text=str.tostring(math.round(array.avg(statsarray_no_of_bars), 2)), text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        _row := _row + 1
+
+
+        table.cell(sostats, column=0, row=_row, text='Total volume:', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        table.cell(sostats, column=1, row=_row, text=str.tostring(math.round(glb_total_volume, cfg_decimals)) + ' ' + str.tostring(syminfo.currency), text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        _row := _row + 1
+
+        table.cell(sostats, column=0, row=_row, text='Commision:', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        table.cell(sostats, column=1, row=_row, text=str.tostring(math.round(get_commission_for_volume(glb_total_volume), cfg_decimals)) + ' ' + str.tostring(syminfo.currency), text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+        _row := _row + 1
+
+
+        if array.size(statsarray_safety_orders) > 0
+            table.cell(sostats, column=0, row=_row, text='Close stats for ' + str.tostring(stats_deals_finished) + ' deals', text_color=color.white, text_size=size.small, bgcolor=get_bg_color_blue(), text_halign=text.align_left)
+            table.cell(sostats, column=1, row=_row, text='Number (%) / Exit with timeout', text_color=color.white, text_size=size.small, bgcolor=get_bg_color_blue())
+            _row := _row + 1
+            _saved_row = _row
+            _row := _row + 2
+
+            _max_safety_orders = 0
+            float _avg_safety_orders = 0
+            for _i = 0 to array.size(statsarray_safety_orders) - 1 by 1
+                string _closed_text = ''
+                if _i == 0
+                    _closed_text := 'BO    (' + str.tostring(math.round(stepped_deviation(_i), 2)) + '%)'
+                else
+                    _closed_text := 'SO ' + str.tostring(_i) + ' (' + str.tostring(math.round(stepped_deviation(_i), 2)) + '%)'
+
+                _cnt = array.get(statsarray_safety_orders, _i)
+                if _cnt > 0 and _i > _max_safety_orders
+                    _max_safety_orders := _i
+
+                _avg_safety_orders := _avg_safety_orders + _cnt * _i
+                table.cell(sostats, column=0, row=_row + _i, text='Closed with ' + _closed_text, text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row + _i))
+                table.cell(sostats, column=1, row=_row + _i, text=str.tostring(_cnt) + ' (' + str.tostring(math.round(_cnt * 100 / stats_deals_finished, 2)) + '%) / ' + str.tostring(array.get(statsarray_safety_orders_timeout, _i)), text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row + _i))
+
+            _avg_safety_orders := math.round(_avg_safety_orders / array.sum(statsarray_safety_orders), 1)
+
+            table.cell(sostats, column=0, row=_saved_row, text='Max SO used:', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_saved_row))
+            table.cell(sostats, column=1, row=_saved_row, text=str.tostring(_max_safety_orders), text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_saved_row))
+
+            table.cell(sostats, column=0, row=_saved_row + 1, text='Avg SO used:', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_saved_row + 1))
+            table.cell(sostats, column=1, row=_saved_row + 1, text=str.tostring(_avg_safety_orders), text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_saved_row + 1))
+
+        if valid_stop_loss()
+            _row := _row + array.size(statsarray_safety_orders)
+            table.cell(sostats, column=0, row=_row, text='Closed with Stop Loss (' + str.tostring(cfg_stop_loss_perc) + '%)', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+            table.cell(sostats, column=1, row=_row, text=str.tostring(stats_deals_stop_loss_finished) + ' (' + str.tostring(math.round(stats_deals_stop_loss_finished * 100 / stats_deals_finished, 2)) + '%)', text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=stats_deals_stop_loss_finished > 0 ? get_bg_color_red() : get_bg_color_green())
+    //----------------------------------------------------------------
+
+
+
+    //----------------------------------------------------------------
+    if cfg_show_settings_table
+        table settings = table.new(position.bottom_left, columns=1, rows=2, frame_width=1, frame_color=color.black)
+        _row = 0
+        table.cell(settings, column=0, row=0, text='DCA Settings', text_halign=text.align_left, text_size=size.small, text_color=color.white, bgcolor=get_bg_color_blue())
+
+        _text = 'Type: ' + str.tostring(cfg_strategy_type) + '; '
+        _text := _text + 'Commision: ' + str.tostring(cfg_commision_percent) + '%;\n'
+        _text := _text + 'Condition: ' + str.tostring(deal_start_type) + ' '
+        if deal_start_type == 'RSI-7'
+            _text := _text + str.tostring(rsi_start_operation)
+            _text := _text + ' ' + str.tostring(rsi_start_value) + ' \n\n'
+        else if deal_start_type == 'External Indicator'
+            _text := _text + '( '
+            _text := _text + str.tostring(deal_start_operation) + ' '
+            _text := _text + str.tostring(deal_start_value)
+            _text := _text + ' )\n\n'
+
+        _text := _text + 'TP: ' + str.tostring(cfg_take_profit_perc) + '% '
+        _text := _text + ' (' + str.tostring(cfg_take_profit_type) + ')'
+        if cfg_enable_stop_loss
+            _text := _text + '\nSL: ' + str.tostring(cfg_stop_loss_perc) + '%'
+        _text := _text + '\n\n'
+
+        _text := _text + 'BO: ' + str.tostring(cfg_base_order_size_usd) + ' ' + str.tostring(syminfo.currency) + '; '
+        _text := _text + 'SO: ' + str.tostring(cfg_safety_order_size_usd) + ' ' + str.tostring(syminfo.currency) + ';\n'
+        _text := _text + 'SO Dev: ' + str.tostring(cfg_safety_order_price_deviation_perc) + '% ; '
+        _text := _text + 'Max SO: ' + str.tostring(cfg_max_safety_orders) + '; '
+        _text := _text + 'Covered: ' + str.tostring(math.round(stepped_deviation(cfg_max_safety_orders), 2)) + ' %;\n'
+        _text := _text + 'SO Volume Scale: ' + str.tostring(cfg_safety_order_volume_scale) + '; '
+        _text := _text + 'SO Step Scale: ' + str.tostring(cfg_safety_order_price_step_scale) + ';\n'
+        
+
+        table.cell(settings, column=0, row=1, text=_text, text_halign=text.align_left, text_color=color.black, text_size=size.small, bgcolor=get_bg_color_grey(_row))
+
+
+//print some debug every X candles
+// var int last_bar_debug = 0
+
+// if bar_index - last_bar_debug > 20
+//     last_bar_debug := bar_index
+//     _debug_text  = 'strategy.netprofit:  ' + str.tostring(strategy.netprofit) + '\n'
+//     _debug_text += 'glb_prevnetp:  ' + str.tostring(glb_strategy_prev_netprofit) + '\n'
+//     _debug_text += 'strategy.openprofit:  ' + str.tostring(strategy.openprofit) + '\n'
+//     // _debug_text += 'glb_prevnetp:' + str.tostring(glb_strategy_prev_netprofit) + '\n'
+
+//     label.new(bar_index, close, text="DBG", tooltip=_debug_text,
+//      yloc=yloc.price, size=size.normal, style=label.style_label_up, textcolor=color.black, color=get_bg_color_lightblue())
+
+
+
+// lab = ""
+
+// if array.size(statsarray_losing_deals_pnl) > 0
+//     lab := lab + "Losing deals:\n"
+//     for i = 0 to array.size(statsarray_losing_deals_pnl) - 1
+//         lab := lab + tostring(array.get(statsarray_losing_deals_pnl, i)) + "\n"
+
+// if array.size(statsarray_winning_deals_pnl) > 0
+//     lab := lab + "Winning deals:\n"
+//     for i = 0 to array.size(statsarray_winning_deals_pnl) - 1
+//         lab := lab + tostring(array.get(statsarray_winning_deals_pnl, i)) + "\n"
+
+// f_print(lab)
+//----------------------------------------------------------------
+

@@ -1,0 +1,251 @@
+//@version=5
+
+strategy(title="Bayesian SuperTrend Swing Pivot_1", shorttitle = "BaySprTrndSwngPvt_1", overlay=true, max_bars_back=1000)
+
+
+// --SuperTrend ATR+RSI-- //
+//   SuperTrend ATR+RSI   //
+//   SuperTrend ATR+RSI   //
+// - SuperTrend ATR+RSI - //
+//   SuperTrend ATR+RSI   //
+//   SuperTrend ATR+RSI   //
+// --SuperTrend ATR+RSI-- //
+
+//Mode
+Factor=input.int(title="Super Trend", defval=3, minval=1,maxval = 100)
+ATR=input.int(title="ATR", defval=7, minval=1,maxval = 100)
+RSI = input.int(title="RSI", defval=7, minval=1, maxval = 100)
+
+//Super Trend ATR
+Up=hl2-(Factor*atr(ATR))
+Dn=hl2+(Factor*atr(ATR))
+
+TUp=close[1]>TUp[1]? max(Up,TUp[1]) : Up
+TDown=close[1]<TDown[1]? min(Dn,TDown[1]) : Dn
+
+Trend = close > TDown[1] ? 1: close< TUp[1]? -1: nz(Trend[1],1)
+Tsl = Trend==1? TUp: TDown
+
+linecolor = Trend == 1 ? green : red
+
+//RSI
+src = close,
+
+ep = 2 * RSI - 1
+auc = ema( max( src - src[1], 0 ), ep )
+adc = ema( max( src[1] - src, 0 ), ep )
+x1 = (RSI - 1) * ( adc * 70 / (100-70) - auc)
+ub = iff( x1 >= 0, src + x1, src + x1 * (100-70)/70 )
+x2 = (RSI - 1) * ( adc * 30 / (100-30) - auc)
+lb = iff( x2 >= 0, src + x2, src + x2 * (100-30)/30 )
+
+//Affichage
+plot(avg(ub, lb), color=purple, style = line, linewidth=1, title="RSI")
+plot(Tsl, color = linecolor , style = line , linewidth = 1,title = "SuperTrend ATR")
+
+
+
+// --Swing Pivots-- //
+//   Swing Pivots   //
+//   Swing Pivots   //
+// - Swing Pivots - //
+//   Swing Pivots   //
+//   Swing Pivots   //
+// --Swing Pivots-- //
+
+
+// RSI Settings for user
+rsiSource = input(title="RSI Source", type=input.source, defval=close)
+rsiLength = input.int(title="RSI Length", type=input.integer, defval=7)
+rsiOverbought = input.int(title="RSI Overbought", type=input.integer, defval=70, minval=51, maxval=100)
+rsiOvesold = input.int(title="RSI Oversold", type=input.integer, defval=30, minval=1, maxval=49)
+
+// RSI value based on inbuilt RSI
+rsiValue = rsi(rsiSource, rsiLength)
+
+// Get the current state
+isOverbought = rsiValue >= rsiOverbought
+isOversold = rsiValue <= rsiOvesold
+
+// State of the last extreme 0 for initialization, 1 = overbought, 2 = oversold
+laststate = 0
+
+// Highest and Lowest prices since the last state change
+hh = low
+ll = high
+
+// Labels
+labelll = na
+labelhh = na
+
+// Swing lines
+line_up = na
+line_down = na
+
+last_actual_label_hh_price = 0.0
+last_actual_label_ll_price = 0.0
+
+
+// FUNCTIONS
+obLabelText() =>
+    if(last_actual_label_hh_price < high)
+        "HH"
+    else
+        "LH"
+//plot(last_actual_label_hh_price)
+osLabelText() =>
+    if(last_actual_label_ll_price < low)
+        "HL"
+    else
+        "LL"
+
+// Create oversold or overbought label
+createOverBoughtLabel(isIt) =>
+    if(isIt)
+        label.new(x=bar_index, y=na ,yloc=yloc.abovebar, style=label.style_label_down, color=color.red, size=size.tiny, text=obLabelText())
+    else
+        label.new(x=bar_index, y=na ,yloc=yloc.belowbar, style=label.style_label_up, color=color.green, size=size.tiny, text=osLabelText())
+       
+        
+// Move the oversold swing and label
+moveOversoldLabel() =>
+    label.set_x(labelll, bar_index)
+    label.set_y(labelll, low)
+    label.set_text(labelll, osLabelText())
+    line.set_x1(line_down, bar_index)
+    line.set_y1(line_down, low)
+
+moveOverBoughtLabel() =>
+    label.set_x(labelhh, bar_index)
+    label.set_y(labelhh, high)
+    label.set_text(labelhh, obLabelText())
+    line.set_x1(line_up, bar_index)
+    line.set_y1(line_up, high)
+
+// We go from oversold straight to overbought NEW DRAWINGS CREATED HERE
+if(laststate == 2 and isOverbought)
+    hh := high
+    labelhh := createOverBoughtLabel(true)
+    last_actual_label_ll_price := label.get_y(labelll)
+    labelll_ts = label.get_x(labelll)
+    labelll_price = label.get_y(labelll)
+    line_up := line.new(x1=bar_index, y1=high, x2=labelll_ts, y2=labelll_price, width=1)
+
+// We go from overbought straight to oversold  NEW DRAWINGS CREATED HERE
+if(laststate == 1 and isOversold)
+    ll := low
+    labelll := createOverBoughtLabel(false)
+    last_actual_label_hh_price := label.get_y(labelhh)
+    labelhh_ts = label.get_x(labelhh)
+    labelhh_price = label.get_y(labelhh)
+    line_down := line.new(x1=bar_index, y1=high, x2=labelhh_ts, y2=labelhh_price, width=1)
+
+
+// If we are overbought
+if(isOverbought)
+    if(high >= hh)
+        hh := high
+        moveOverBoughtLabel()
+    laststate := 1
+    
+// If we are oversold
+if(isOversold)
+    if(low <= ll)
+        ll := low
+        moveOversoldLabel()
+    laststate := 2
+    
+    
+// If last state was overbought and we are overbought
+if(laststate == 1 and isOverbought)
+    if(hh <= high)
+        hh := high
+        moveOverBoughtLabel()
+    
+//If we are oversold and the last state was oversold, move the drawings to the lowest price
+if(laststate == 2 and isOversold)
+    if(low <= ll)
+        ll := low
+        moveOversoldLabel()
+
+
+// If last state was overbought
+if(laststate == 1)
+    if(hh <= high)
+        hh := high
+        moveOverBoughtLabel()
+        
+// If last stare was oversold
+if(laststate == 2)
+    if(ll >= low)
+        ll := low
+        moveOversoldLabel()
+
+
+
+
+// --Bayesian RSI-- //
+//   Bayesian RSI   //
+//   Bayesian RSI   //
+// - Bayesian RSI - //
+//   Bayesian RSI   //
+//   Bayesian RSI   //
+// --Bayesian RSI-- //
+
+p = input(title="Period", type=integer, defval=30, minval=5, maxval=500)
+t = input(title="Movement Thresh", type=float, defval=1.003, minval=1.001, maxval=1.5, step=0.001)
+r = input(title="Look Range", type=integer, defval=7, minval=1,maxval=500, step=1)
+RSIT = input(title="Jump", type=integer, defval=8, minval=1,maxval=99, step=1)
+BAYEST = input(title="SM", type=integer, defval=3, minval=1,maxval=99, step=1)
+RSIP = input(title="RSIP", type=integer, defval=14, minval=2,maxval=100, step=1)
+countup = 1
+countdn = 1
+countupS = 1
+countdnS = 1
+for i = p to 1
+    if close[i]/close[i + r] > t
+        countup := countup + 1
+    else
+        countdn := countdn + 1
+    if close[i]/close[i + r] < 2 - t
+        countupS := countupS + 1
+    else
+        countdnS := countdnS + 1
+
+rsi = rsi(open,RSIP)
+
+countup2 = 1
+countup3 = 1
+countup2S = 1
+countup3S = 1
+for i = p to 1
+    if close[i]/close[i + r] > t and rsi[i + r + 1] > rsi[i + r + 2] + RSIT
+        countup2 := countup2 + 1
+    else
+        countup3 := countup3 + 1
+    if close[i]/close[i + r] < 2 - t and rsi[i + r + 1] < rsi[i + r + 2] - RSIT
+        countup2S := countup2S + 1
+    else
+        countup3S := countup3S + 1
+
+countup2b = countup2 / p
+countup3b = countup3 / p
+countupb = countup / p
+countdnb = countdn / p
+
+countup2bS = countup2S / p
+countup3bS = countup3S / p
+countupbS = countupS / p
+countdnbS = countdnS / p
+bayes = 0
+bayes := ((countupb * countup2b) / ((countupb * countup2b) + (countdnb * countup3b))) * 100
+bayesS = 0
+bayesS := ((countupbS * countup2bS) / ((countupbS * countup2bS) + (countdnbS * countup3bS))) * 100
+SN1 = sma(bayes,BAYEST)
+SN2 = sma(bayesS,BAYEST)
+shortCondition = crossunder(bayesS, SN2) //and rsi < 49
+longCondition = crossover(bayes, SN1) //and rsi > 59
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+if (shortCondition)
+    strategy.entry("Short", strategy.short)

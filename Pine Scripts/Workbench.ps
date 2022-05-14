@@ -1,0 +1,135 @@
+var string GP1 = "Moving averages"
+int     masQtyInput    = input.int(20, "Quantity", minval = 1, maxval = 40, group = GP1, tooltip = "1-40")
+int     masStartInput  = input.int(20, "Periods begin at", minval = 2, maxval = 200, group = GP1, tooltip = "2-200")
+int     masStepInput   = input.int(20, "Periods increase by", minval = 1, maxval = 100, group = GP1, tooltip = "1-100")
+
+var string GP2 = "Display"
+string  tableYposInput = input.string("top", "Panel position", inline = "11", options = ["top", "middle", "bottom"], group = GP2)
+string  tableXposInput = input.string("right", "", inline = "11", options = ["left", "center", "right"], group = GP2)
+color   bullColorInput = input.color(color.new(color.green, 30), "Bull", inline = "12", group = GP2)
+color   bearColorInput = input.color(color.new(color.red, 30), "Bear", inline = "12", group = GP2)
+color   neutColorInput = input.color(color.new(color.gray, 30), "Neutral", inline = "12", group = GP2)
+
+var table panel = table.new(tableYposInput + "_" + tableXposInput, 2, masQtyInput + 1)
+if barstate.islast
+    // Table header.
+    table.cell(panel, 0, 0, "MA", bgcolor = neutColorInput)
+    table.cell(panel, 1, 0, "Value", bgcolor = neutColorInput)
+
+int period = masStartInput
+for i = 1 to masQtyInput
+    // ————— Call MAs on each bar.
+    float ma = ta.sma(close, period)
+    // ————— Only execute table code on last bar.
+    if barstate.islast
+        // Period in left column.
+        table.cell(panel, 0, i, str.tostring(period), bgcolor = neutColorInput)
+        // If MA is between the open and close, use neutral color. If close is lower/higher than MA, use bull/bear color.
+        bgColor = close > ma ? open < ma ? neutColorInput : bullColorInput : open > ma ? neutColorInput : bearColorInput
+        // MA value in right column.
+        table.cell(panel, 1, i, str.tostring(ma, format.mintick), text_color = color.black, bgcolor = bgColor)
+    period += masStepInput
+
+    // ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+    
+
+
+
+
+
+
+         // --**************************-- //
+         // --Strength of Movement [SoM]-- //
+         // - Strength of Movement [SoM] - //
+         // --Strength of Movement [SoM]-- //
+         // --**************************-- //
+
+
+
+price            =      input(title      =      "Source",                defval=close)
+
+calc_hl          =     string("High/Low")  
+calc_oc          =     string("Open/Close")
+
+
+n                =      input.int(title      =      "Range",                 defval=3,           minval=2,          maxval=5)
+calc             =      input.string(title      =      "SoM Calculation",       options = [calc_oc, calc_hl], defval=calc_oc)
+length           =      input.int(title      =      "Avg Length",            defval=10,          minval=1)
+smooth           =      input.int(title      =      "Smoothing",             defval=3,           minval=1)
+
+
+
+                // a is the n-bar average change of price - used as a proxy for the "strength of movement"                                  //
+                // note that in an "n" number of bars, there's actually (n-1) number of "change ranges"                                     //
+                // v4.0 optional algos for calculation .. start/end = takes start price - end price  -- this is simpler                     //
+                //                                        high/low  = takes highest - lowest of range -- this exposes "breakout attempts"   //
+
+
+
+
+
+var float move_hl     =       (ta.highest(price, n) - ta.lowest(price, n)) * math.sign(move_oc)                          // need to make this "directional" 
+var float move_oc     =       price - price[n-1]                                                              // calculate average "directional" change per period
+
+avgmove         =       calc == calc_oc ? move_oc / (n - 1) :  move_hl / (n - 1)
+  
+aa              =       nz(avgmove / price[n-1])                                                        // v2: for technical accuracy, convert price change from absolute value to a ratio
+b               =       ta.wma(aa, length)                                                                 // take the (weighted) average of the change ratio for a length of bars 
+
+ 
+s               =       stoch(b, max(b,0), min(b,0), length) *2 -100                                    // scale the result as a +100/-100 oscillator 
+                                                                                                        // v2: updated with adjustment of highest/lowest values to avoid the "confusing visual"
+ss              =       ta.wma(s, smooth)                                                                  // final smoothing
+
+
+
+col_somraw      =       color.new(color.silver, 80)
+col_trendup     =       #2962ff
+col_trenddn     =       #e91e63
+col_zeroline    =       #ffee0044                                                                       // yellow with some transparency, which can't be set in hline()
+
+//plots
+hline(0,        "Zero Line",                color       =       col_zeroline,       linestyle       =       hline.style_solid)
+hline(100,      "Upper Border",             color       =       color.green,        linestyle       =       hline.style_dotted)
+hline(-100,     "Lower Border",             color       =       color.red,          linestyle       =       hline.style_dotted)
+
+plot(s,         title  =     "K_SoM Raw",   color     =       col_somraw,                                 linewidth = 1)
+plot(ss,        title  =     "K_SoM",       color     =       ss >=0 ? col_trendup : col_trenddn,         linewidth = 3)
+
+maxup           =      s     ==      100      ?     100      :      na
+maxdn           =      s     ==     -100      ?    -100      :      na
+plot(maxup,     "Max Strength",      style    =    plot.style_circles,    color   =   col_trendup,    linewidth = 3)
+plot(maxdn,     "Max Weakness",      style    =    plot.style_circles,    color   =   col_trenddn,    linewidth = 3)
+
+
+
+
+
+
+//strategy.entry(id, direction, qty, limit, stop, oca_name, oca_type, comment, when, alert_message)
+
+strategy.entry("enter long", strategy.long, 1, when = open > high[1]) // enter long by market if current open great then previous high
+strategy.entry("enter short", strategy.short, 1, when = open < low[1]) // enter short by market if current open less then previous low
+
+longStarted = 0.0
+longStarted := (strategy.position_size > 0) and (strategy.position_size[1] <= 0)
+
+
+
+shortStarted = 0.0
+shortStarted := (strategy.position_size < 0) and (strategy.position_size[1] >= 0)
+
+
+//strategy.exit(id, from_entry, qty, qty_percent, profit, limit, loss, stop, trail_price, trail_points, trail_offset, oca_name, comment, when, alert_message)
+
+strategy.entry("long", strategy.long, 1, when = open > high[1]) // enter long by market if current open great then previous high
+strategy.exit("exit", "long", profit = 10, loss = 5) // generate full exit bracket (profit 10 points, loss 5 points per contract) from entry with name "long"
+
+
+
+
+
+
+
+
+

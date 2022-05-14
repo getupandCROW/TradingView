@@ -1,0 +1,520 @@
+// ▒█▀▀▀█ ▒█▀▀█ ▒█░   ▒█▀▀█ ▒█▀▀█ ▒▀▀█▀▀ ▒█░▒█ ▒█▀▀█ 
+//  █░░▄▄ ▒█▄▄█ ▒█░   ▒█▄▄█ ▒█░   ▒░▒█   ▒█░▒█ ▒█▄▄▄
+// ▒█▄▄▄█ ▒█░▒█ ▒█▄▄█ ▒█░▒█ ▒█▄▄█ ▒░▒█   ░█▄▄█ ░▄▄▄█
+
+//@version=5
+
+indicator('Argo II', overlay=false)
+
+// ================================== //
+// ---------> Bot details <----------- //
+// ================================== //
+
+BotID = input.string(title='Bot ID', group='Bot details', defval='')
+EmailToken = input.string(title='Email Token', group='Bot details', defval='')
+Exchange = input.string(title='Exchange', group='Bot details', defval='BINANCE', options=['BINANCE', 'FTX', 'KUCOIN', 'HUOBI', 'BINANCEUS', 'COINBASE', 'BITTREX', 'BITMEX', 'GEMINI'])
+Quote = input.string(title='Quote currency', group='Bot details', defval='USDT', options=['USDT', 'BTC', 'USD', 'ETH', 'BUSD', 'EUR', 'USDC', 'ADA', 'BNB'])
+Signals = input.string(title='Signal type', group='Bot details', defval='Buy', options=['Buy', 'Buy + Sell', 'Sell'])
+
+// ================================== //
+// -------> Coin selection <--------- //
+// ================================== //
+
+/// ========== USER INPUT ========== \\\
+
+c1 = input.string(title='Coin 1', group='Coin Selection', defval='ETH', inline='c1')
+c2 = input.string(title='Coin 2', group='Coin Selection', defval='ADA', inline='c2')
+c3 = input.string(title='Coin 3', group='Coin Selection', defval='ATOM', inline='c3')
+c4 = input.string(title='Coin 4', group='Coin Selection', defval='SOL', inline='c4')
+c5 = input.string(title='Coin 5', group='Coin Selection', defval='ALGO', inline='c5')
+c6 = input.string(title='Coin 6', group='Coin Selection', defval='FTT', inline='c6')
+c7 = input.string(title='Coin 7', group='Coin Selection', defval='IOTA', inline='c1')
+c8 = input.string(title='Coin 8', group='Coin Selection', defval='LUNA', inline='c2')
+c9 = input.string(title='Coin 9', group='Coin Selection', defval='ALGO', inline='c3')
+c10 = input.string(title='Coin 10', group='Coin Selection', defval='FTT', inline='c4')
+c11 = input.string(title='Coin 11', group='Coin Selection', defval='IOTA', inline='c5')
+c12 = input.string(title='Coin 12', group='Coin Selection', defval='LUNA', inline='c6')
+
+/// ========== Extract TICKER IDs from coin names ========== \\\
+
+// Ticker IDs are needed for security functions
+
+ticker1 = Exchange + ':' + c1 + Quote
+ticker2 = Exchange + ':' + c2 + Quote
+ticker3 = Exchange + ':' + c3 + Quote
+ticker4 = Exchange + ':' + c4 + Quote
+ticker5 = Exchange + ':' + c5 + Quote
+ticker6 = Exchange + ':' + c6 + Quote
+ticker7 = Exchange + ':' + c7 + Quote
+ticker8 = Exchange + ':' + c8 + Quote
+ticker9 = Exchange + ':' + c9 + Quote
+ticker10 = Exchange + ':' + c10 + Quote
+ticker11 = Exchange + ':' + c11 + Quote
+ticker12 = Exchange + ':' + c12 + Quote
+
+
+/// ========== Extract PAIRS from coin names ========== \\\
+
+// Pairs written in 3commas format are required for generating alerts in the right format.
+
+c1Pair = Quote + '_' + c1
+c2Pair = Quote + '_' + c2
+c3Pair = Quote + '_' + c3
+c4Pair = Quote + '_' + c4
+c5Pair = Quote + '_' + c5
+c6Pair = Quote + '_' + c6
+c7Pair = Quote + '_' + c7
+c8Pair = Quote + '_' + c8
+c9Pair = Quote + '_' + c9
+c10Pair = Quote + '_' + c10
+c11Pair = Quote + '_' + c11
+c12Pair = Quote + '_' + c12
+
+// ================================== //
+// ----------> Indicators <---------- //
+// ================================== //
+source = close
+
+EnableBB = input.bool(false, 'Enable ?', group='Bollinger Bands')
+
+BBlength = input.int(13, minval=1, maxval=50, group='Bollinger Bands', title='Lenght')
+BBmult = input.float(1.8, minval=0.001, maxval=50, group='Bollinger Bands', title='Deviation')
+BBBuyCondition = input.string(title='Buy if value', options=['is below the lower band', 'crosses over the lower band'], group='Bollinger Bands', defval='is below the lower band')
+BBSellCondition = input.string(title='Sell if value', options=['is above the upper band', 'crosses under the upper band'], group='Bollinger Bands', defval='is above the upper band')
+
+basis = ta.sma(source, BBlength)
+dev = BBmult * ta.stdev(source, BBlength)
+upper = basis + dev
+lower = basis - dev
+
+basis2 = ta.sma(source, 1)
+dev2 = 1 * ta.stdev(source, 1)
+upper2 = basis2 + dev2
+lower2 = basis2 - dev2
+
+BB_Buy1a = EnableBB == true and BBBuyCondition == 'is below the lower band'
+BB_Buy1b = source < lower
+BB_Buy2a = EnableBB == true and BBBuyCondition == 'crosses over the lower band'
+BB_Buy2b = ta.crossover(source, lower)
+BB_neutral = source <= lower or source > lower
+
+BBBuy = BB_Buy1a ? BB_Buy1b : BB_Buy2a ? BB_Buy2b : BB_neutral
+
+BB_Sell1a = EnableBB == true and BBSellCondition == 'is above the upper band'
+BB_Sell1b = source > upper
+BB_Sell2a = EnableBB == true and BBSellCondition == 'crosses under the upper band'
+BB_Sell2b = ta.crossunder(source, upper)
+
+BBSell = BB_Sell1a ? BB_Sell1b : BB_Sell2a ? BB_Sell2b : BB_neutral
+
+/// ================ RSI =============== \\
+
+RSI1_ON = input.bool(false, 'Enable RSI   |', group='RELATIVE STRENGTH INDEX', inline='RSIL')
+//RSI1_TF          = input(title="TF", type=input.resolution, defval="auto",group="RELATIVE STRENGTH INDEX", inline = "RSI1.1")
+RSI1_L = input.int(title='Length', group='RELATIVE STRENGTH INDEX', defval=14, inline='RSIL')
+RSI1_BuyType = input.string(title='Buy if value', options=['is below', 'crosses over'], group='RELATIVE STRENGTH INDEX', inline='RSI1.2', defval='is below')
+RSI1_BuyLimit = input.int(title=' ', group='RELATIVE STRENGTH INDEX', defval=30, inline='RSI1.2')
+RSI1_SellType = input.string(title='Sell if value', options=['is above', 'crosses under'], group='RELATIVE STRENGTH INDEX', inline='RSI1.3', defval='is above')
+RSI1_SellLimit = input.int(title=' ', group='RELATIVE STRENGTH INDEX', defval=75, inline='RSI1.3')
+
+RSI1 = ta.rsi(close, RSI1_L)
+
+
+RSI_Buy1a = RSI1_ON == true and RSI1_BuyType == 'is below'
+RSI_Buy1b = RSI1 < RSI1_BuyLimit
+RSI_Buy2a = RSI1_ON == true and RSI1_BuyType == 'crosses over'
+RSI_Buy2b = ta.crossover(RSI1, RSI1_BuyLimit)
+RSI_neutral = RSI1 <= RSI1_BuyLimit or RSI1 > RSI1_BuyLimit
+
+RSI1_Buy = RSI_Buy1a ? RSI_Buy1b : RSI_Buy2a ? RSI_Buy2b : RSI_neutral
+
+
+RSI_Sell1a = RSI1_ON == true and RSI1_SellType == 'is above'
+RSI_Sell1b = RSI1 > RSI1_SellLimit
+RSI_Sell2a = RSI1_ON == true and RSI1_SellType == 'crosses under'
+RSI_Sell2b = ta.crossunder(RSI1, RSI1_SellLimit)
+
+RSI1_Sell = RSI_Sell1a ? RSI_Sell1b : RSI_Sell2a ? RSI_Sell2b : RSI_neutral
+
+
+//RISING & FALLING RSI
+RSI_rising = input.bool(false, 'RSI rising', group='RELATIVE STRENGTH INDEX', inline='rising1')
+RSI_falling = input.bool(false, 'RSI falling', group='RELATIVE STRENGTH INDEX', inline='falling1')
+RSI_risingCandles = input.int(title='Nb candles', group='RELATIVE STRENGTH INDEX', defval=1, inline='rising1')
+RSI_fallingCandles = input.int(title='Nb candles', group='RELATIVE STRENGTH INDEX', defval=2, inline='falling1')
+
+rsiRising = ta.rising(RSI1, RSI_risingCandles)
+rsiFalling = ta.falling(RSI1, RSI_fallingCandles)
+
+RSIBuy1 = RSI1_Buy and rsiRising
+RSIBuy2 = RSI1_Buy
+
+RSISell1 = RSI1_Sell and rsiFalling
+RSISell2 = RSI1_Sell
+
+RSIBuy = RSI_rising ? RSIBuy1 : RSIBuy2
+RSISell = RSI_falling ? RSISell1 : RSISell2
+
+// Integrating RSI buy / sell conditions
+
+//RSIBuy  = RSI1_Buy  
+//RSISell = RSI1_Sell 
+
+///=========== Williams % ============///
+
+EnableW = input.bool(false, 'Enable?', group='WILLIAMS %R')
+
+W_length = input.int(title='Length', defval=14, group='WILLIAMS %R')
+WBuyCondition = input.string(title='Buy if value', options=['is below', 'crosses over'], group='WILLIAMS %R', inline='WBuycondition', defval='is below')
+WBuyLevel = input.float(title='   ', defval=-77, group='WILLIAMS %R', minval=-100, maxval=0, step=1, inline='WBuycondition')
+WSellCondition = input.string(title='Sell if value', options=['is above', 'crosses under'], group='WILLIAMS %R', inline='WSellcondition', defval='is above')
+WSellLevel = input.float(title='   ', defval=-20, group='WILLIAMS %R', minval=-100, maxval=0, step=1, inline='WSellcondition')
+
+_pr(length) =>
+    max = ta.highest(W_length)
+    min = ta.lowest(W_length)
+    100 * (source - max) / (max - min)
+percentR = _pr(W_length)
+
+W_Buy1a = EnableW == true and WBuyCondition == 'is below'
+W_Buy1b = percentR < WBuyLevel
+W_Buy2a = EnableW == true and WBuyCondition == 'crosses over'
+W_Buy2b = ta.crossover(percentR, WBuyLevel)
+W_neutral = percentR <= WBuyLevel or percentR > WBuyLevel
+
+WBuy = W_Buy1a ? W_Buy1b : W_Buy2a ? W_Buy2b : W_neutral
+
+
+W_Sell1a = EnableW == true and WSellCondition == 'is above'
+W_Sell1b = percentR > WSellLevel
+W_Sell2a = EnableW == true and WSellCondition == 'crosses under'
+W_Sell2b = ta.crossunder(percentR, WSellLevel)
+
+WSell = W_Sell1a ? W_Sell1b : W_Sell2a ? W_Sell2b : W_neutral
+
+
+
+///=========== SMA oscillator ============///
+
+EnableSMA = input.bool(false, 'Enable?', group='SMA oscillator')
+
+Wlen = input.int(14, minval=1, title='Length', group='SMA oscillator')
+
+SMABuyCondition = input.string(title='Buy if value', options=['is below', 'crosses over'], group='SMA oscillator', inline='SMABuycondition', defval='is below')
+SMABuyLevel = input.float(title=' ', defval=-0.01, group='SMA oscillator', inline='SMABuycondition', minval=-0.50, maxval=0, step=0.001)
+
+SMASellCondition = input.string(title='Sell if value', options=['is above', 'crosses under'], group='SMA oscillator', inline='SMASellcondition', defval='is above')
+SMASellLevel = input.float(title=' ', defval=0.020, group='SMA oscillator', inline='SMASellcondition', minval=0, maxval=0.50, step=0.001)
+
+out = math.log(close / ta.sma(source, Wlen))
+
+SMA_Buy1a = EnableSMA == true and SMABuyCondition == 'is below'
+SMA_Buy1b = out < SMABuyLevel
+SMA_Buy2a = EnableSMA == true and SMABuyCondition == 'crosses over'
+SMA_Buy2b = ta.crossover(out, SMABuyLevel)
+SMA_neutral = out <= SMABuyLevel or out > SMABuyLevel
+
+SMABuy = SMA_Buy1a ? SMA_Buy1b : SMA_Buy2a ? SMA_Buy2b : SMA_neutral
+
+
+SMA_Sell1a = EnableSMA == true and SMASellCondition == 'is above'
+SMA_Sell1b = out > SMASellLevel
+SMA_Sell2a = EnableSMA == true and SMASellCondition == 'crosses under'
+SMA_Sell2b = ta.crossunder(out, SMASellLevel)
+
+SMASell = SMA_Sell1a ? SMA_Sell1b : SMA_Sell2a ? SMA_Sell2b : SMA_neutral
+
+
+///=========== EMA ============///
+
+EMA_ON = input.bool(false, 'Trade  when  on EMA...', group='EMA TREND FILTER', inline='EMA1')
+EMA_SRC = input.source(title='EMA source', defval=close, group='EMA TREND FILTER')
+EMA_L = input.int(title='EMA length', group='EMA TREND FILTER', defval=200)
+EMA = ta.ema(EMA_SRC, EMA_L)
+
+EMATrend = input.string(title='', options=['uptrend', 'downtrend'], group='EMA TREND FILTER', defval='uptrend', inline='EMA1')
+
+EMA1 = EMA_ON == true and EMATrend == 'uptrend'
+EMA2 = EMA_ON == true and EMATrend == 'downtrend'
+EMAUptrend = EMA_SRC > EMA
+EMADowntrend = EMA_SRC < EMA
+EMAneutral = EMA_SRC < EMA or EMA_SRC > EMA
+
+EMASIgnal = EMA1 ? EMAUptrend : EMA2 ? EMADowntrend : EMAneutral
+
+
+/// ================ Inverse Fisher Transform =============== \\
+
+wmalength = input.int(9, title='Smoothing length', group='Inverse Fisher Transform')
+
+// IFT RSI
+RSIon = input.bool(false, title='RSI, lenght', group='Inverse Fisher Transform', inline='IFRSI')
+rsilength = input.int(5, title=' ', group='Inverse Fisher Transform', inline='IFRSI')
+v1 = 0.1 * (ta.rsi(close, rsilength) - 50)
+v2 = ta.wma(v1, wmalength)
+
+INV1Calc = (math.exp(2 * v2) - 1) / (math.exp(2 * v2) + 1)
+INV1 = RSIon ? INV1Calc : 0
+
+AV1 = INV1 ? 1 : 0
+
+// IFT CCI
+CCIon = input.bool(false, title='CCI, lenght', group='Inverse Fisher Transform', inline='IFCCI')
+ccilength = input.int(5, '', group='Inverse Fisher Transform', inline='IFCCI')
+v11 = 0.1 * (ta.cci(close, ccilength) / 4)
+v21 = ta.wma(v11, wmalength)
+
+INV2Calc = (math.exp(2 * v21) - 1) / (math.exp(2 * v21) + 1)
+INV2 = CCIon ? INV2Calc : 0
+
+AV2 = INV2 ? 1 : 0
+
+// IFT STOCH
+STOCHon = input.bool(false, title='STOCH, lenght', group='Inverse Fisher Transform', inline='IFSTOCH')
+stochlength = input.int(5, '', group='Inverse Fisher Transform', inline='IFSTOCH')
+v12 = 0.1 * (ta.stoch(close, high, low, stochlength) - 50)
+v22 = ta.wma(v1, wmalength)
+
+INV3Calc = (math.exp(2 * v22) - 1) / (math.exp(2 * v22) + 1)
+INV3 = STOCHon ? INV3Calc : 0
+
+AV3 = INV3 ? 1 : 0
+
+// IFT MFI
+MFIon = input.bool(false, title='MFI, lenght', group='Inverse Fisher Transform', inline='IFMFI')
+mfilength = input.int(5, '', group='Inverse Fisher Transform', inline='IFMFI')
+MFIsource = hlc3
+upMFI = math.sum(volume * (ta.change(MFIsource) <= 0 ? 0 : MFIsource), mfilength)
+loMFI = math.sum(volume * (ta.change(MFIsource) >= 0 ? 0 : MFIsource), mfilength)
+mfi = 100.0 - 100.0 / (1.0 + upMFI / loMFI)
+v13 = 0.1 * (mfi - 50)
+v23 = ta.wma(v13, wmalength)
+
+INV4Calc = (math.exp(2 * v23) - 1) / (math.exp(2 * v23) + 1)
+INV4 = MFIon ? INV4Calc : 0
+
+AV4 = INV4 ? 1 : 0
+
+AVcount = AV1 + AV2 + AV3 + AV4
+
+AVCond = AVcount > 0
+AVCalc = (INV1 + INV2 + INV3 + INV4) / AVcount
+
+AVINV = AVCond ? AVCalc : 0
+
+
+buyLevel = input.float(-0.9, 'buy level', group='Inverse Fisher Transform')
+sellLevel = input.float(0.996, 'sell level', group='Inverse Fisher Transform')
+buyLevelMinAge = input.int(defval=0, title='Buy level min candle age', minval=0, group='Inverse Fisher Transform', tooltip='For how many candles do you want the buy condition to be true before actually firing a buy signal. The longer a buy signal remains true the higher the likelihood of a reversal to the upside.')
+buyOnSignalReversal = input.bool(false, title='Buy on signal reversal', tooltip='Buy only on the last candle where the buy conditions are still met. This can help prevent buying a falling knife but can harm profits too. This option overrides both "second buy level" and "min candle age".')
+sellOnSignalReversal = input.bool(false, title='Sell on signal reversal', tooltip='Sell only on the last candle where the sell conditions are still met. This option overrides both "second sell level" and "min candle age".')
+
+candlesBuyCond = buyLevelMinAge == 0 ? true : ta.barssince(AVINV > buyLevel) > buyLevelMinAge
+
+IFT_Buy1a = buyOnSignalReversal and AVcount > 0
+IFT_Buy1b = ta.crossover(AVINV, buyLevel)
+IFT_Buy2a = AVcount > 0 and not buyOnSignalReversal
+IFT_Buy2b = AVINV < buyLevel and candlesBuyCond
+IFT_neutral = AVINV <= buyLevel or AVINV > buyLevel
+
+IFTBuy = IFT_Buy1a ? IFT_Buy1b : IFT_Buy2a ? IFT_Buy2b : IFT_neutral
+
+IFT_Sell1a = sellOnSignalReversal and AVcount > 0
+IFT_Sell1b = ta.crossunder(AVINV, sellLevel)
+IFT_Sell2a = AVcount > 0 and not sellOnSignalReversal
+IFT_Sell2b = AVINV > sellLevel
+
+IFTSell = IFT_Sell1a ? IFT_Sell1b : IFT_Sell2a ? IFT_Sell2b : IFT_neutral
+
+// ================================== //
+// ---------> Protections <---------- //
+// ================================== //
+
+// BTC 1h
+
+BTC1H_ON = input.bool(false, 'BTC RSI Protection', group='PROTECTIONS')
+BTC1H_TF = input.timeframe(title='TF', defval='60', group='PROTECTIONS', inline='BTC1h')
+BTC1H_L = input.int(title='L', group='PROTECTIONS', defval=7, inline='BTC1h')
+BTC1H_BuyLimit = input.int(title='ONLY buy if BTC RSI is BELOW. ', group='PROTECTIONS', defval=70, inline='BTC1h1')
+BTC1H_RSI_Calc = ta.rsi(close, BTC1H_L)
+BTC1H_rsi = request.security('BINANCE:BTCUSDT', BTC1H_TF, BTC1H_RSI_Calc)
+
+BTC_1hCondition1 = BTC1H_rsi < BTC1H_BuyLimit
+BTC_1hCondition2 = BTC1H_rsi > BTC1H_BuyLimit or BTC1H_rsi < BTC1H_BuyLimit
+
+BTC_1h = BTC1H_ON ? BTC_1hCondition1 : BTC_1hCondition2
+
+//TOTAL2
+T24H_ON = input.bool(false, 'TOTAL2 RSI Protection', group='PROTECTIONS')
+T24H_TF = input.timeframe(title='TF', defval='240', group='PROTECTIONS', inline='T2.1')
+T24H_L = input.int(title='L', group='PROTECTIONS', defval=7, inline='T2.1')
+T24H_BuyLimit = input.int(title='ONLY buy if T2 RSI is BELOW... ', group='PROTECTIONS', defval=70, inline='T2.2')
+T24H_RSI_Calc = ta.rsi(close, T24H_L)
+T24H_rsi = request.security('CRYPTOCAP:TOTAL2', T24H_TF, T24H_RSI_Calc)
+
+T2_4hCondition1 = T24H_rsi < T24H_BuyLimit
+T2_4hCondition2 = T24H_rsi > T24H_BuyLimit or T24H_rsi < T24H_BuyLimit
+
+T2_4h = T24H_ON ? T2_4hCondition1 : T2_4hCondition2
+
+
+
+BuyProtection = BTC_1h and T2_4h
+
+
+// ======================================== //
+// --------> Deal start conditions <------- //
+// ======================================== //
+
+//Deal start/close conditions for the composite bot (for the actual alerts, not backtesting)
+BuySignalFunc() =>
+    BBBuy and WBuy and SMABuy and RSIBuy and EMASIgnal and IFTBuy and BuyProtection
+
+SellSignalFunc() =>
+    BBSell and WSell and SMASell and RSISell and IFTSell
+
+SignalFunc() =>
+    [BuySignalFunc(), SellSignalFunc()]
+
+
+//Deal start/close conditions for current chart (for backtesting, not alerts)
+Buy = WBuy and SMABuy and BBBuy and EMASIgnal and RSIBuy and IFTBuy and BuyProtection
+
+Sell = WSell and SMASell and BBSell and RSISell and IFTSell
+
+
+// ======================================================== //
+// --------> Link deal start conditions to tickers <------- //
+// ======================================================== //
+
+//Listed pairs
+[c1_Buy, c1_Sell] = request.security(ticker1, timeframe.period, SignalFunc())
+[c2_Buy, c2_Sell] = request.security(ticker2, timeframe.period, SignalFunc())
+[c3_Buy, c3_Sell] = request.security(ticker3, timeframe.period, SignalFunc())
+[c4_Buy, c4_Sell] = request.security(ticker4, timeframe.period, SignalFunc())
+[c5_Buy, c5_Sell] = request.security(ticker5, timeframe.period, SignalFunc())
+[c6_Buy, c6_Sell] = request.security(ticker6, timeframe.period, SignalFunc())
+[c7_Buy, c7_Sell] = request.security(ticker7, timeframe.period, SignalFunc())
+[c8_Buy, c8_Sell] = request.security(ticker8, timeframe.period, SignalFunc())
+[c9_Buy, c9_Sell] = request.security(ticker9, timeframe.period, SignalFunc())
+[c10_Buy, c10_Sell] = request.security(ticker10, timeframe.period, SignalFunc())
+[c11_Buy, c11_Sell] = request.security(ticker11, timeframe.period, SignalFunc())
+[c12_Buy, c12_Sell] = request.security(ticker12, timeframe.period, SignalFunc())
+
+
+
+// ================================== //
+// ------------> Alerts  <----------- //
+// ================================== //
+
+BuySetting = Signals == 'Buy' or Signals == 'Buy + Sell'
+SellSetting = Signals == 'Sell' or Signals == 'Buy + Sell'
+
+
+//BUY alerts
+
+if c1_Buy and BuySetting
+    alert('{"message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 1, "pair": "' + c1Pair + '"}', alert.freq_once_per_bar_close)
+
+if c2_Buy and BuySetting
+    alert('{"message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 2, "pair": "' + c2Pair + '"}', alert.freq_once_per_bar_close)
+
+if c3_Buy and BuySetting
+    alert('{"message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 3, "pair": "' + c3Pair + '"}', alert.freq_once_per_bar_close)
+
+if c4_Buy and BuySetting
+    alert('{"message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 4, "pair": "' + c4Pair + '"}', alert.freq_once_per_bar_close)
+
+if c5_Buy and BuySetting
+    alert('{"message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 5, "pair": "' + c5Pair + '"}', alert.freq_once_per_bar_close)
+
+if c6_Buy and BuySetting
+    alert('{"message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 6, "pair": "' + c6Pair + '"}', alert.freq_once_per_bar_close)
+
+if c7_Buy and BuySetting
+    alert('{"message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 7, "pair": "' + c7Pair + '"}', alert.freq_once_per_bar_close)
+
+if c8_Buy and BuySetting
+    alert('{"message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 8, "pair": "' + c8Pair + '"}', alert.freq_once_per_bar_close)
+
+if c9_Buy and BuySetting
+    alert('{"message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 5, "pair": "' + c9Pair + '"}', alert.freq_once_per_bar_close)
+
+if c10_Buy and BuySetting
+    alert('{"message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 6, "pair": "' + c10Pair + '"}', alert.freq_once_per_bar_close)
+
+if c11_Buy and BuySetting
+    alert('{"message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 7, "pair": "' + c11Pair + '"}', alert.freq_once_per_bar_close)
+
+if c12_Buy and BuySetting
+    alert('{"message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 8, "pair": "' + c12Pair + '"}', alert.freq_once_per_bar_close)
+
+
+// SELL alerts
+
+if c1_Sell and SellSetting
+    alert('{"action": "close_at_market_price", "message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 1, "pair": "' + c1Pair + '"}', alert.freq_once_per_bar_close)
+
+if c2_Sell and SellSetting
+    alert('{"action": "close_at_market_price", "message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 2, "pair": "' + c2Pair + '"}', alert.freq_once_per_bar_close)
+
+if c3_Sell and SellSetting
+    alert('{"action": "close_at_market_price", "message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 3, "pair": "' + c3Pair + '"}', alert.freq_once_per_bar_close)
+
+if c4_Sell and SellSetting
+    alert('{"action": "close_at_market_price", "message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 4, "pair": "' + c4Pair + '"}', alert.freq_once_per_bar_close)
+
+if c5_Sell and SellSetting
+    alert('{"action": "close_at_market_price", "message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 5, "pair": "' + c5Pair + '"}', alert.freq_once_per_bar_close)
+
+if c6_Sell and SellSetting
+    alert('{"action": "close_at_market_price", "message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 6, "pair": "' + c6Pair + '"}', alert.freq_once_per_bar_close)
+
+if c7_Sell and SellSetting
+    alert('{"action": "close_at_market_price", "message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 7, "pair": "' + c7Pair + '"}', alert.freq_once_per_bar_close)
+
+if c8_Sell and SellSetting
+    alert('{"action": "close_at_market_price", "message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 8, "pair": "' + c8Pair + '"}', alert.freq_once_per_bar_close)
+
+if c9_Sell and SellSetting
+    alert('{"action": "close_at_market_price", "message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 5, "pair": "' + c9Pair + '"}', alert.freq_once_per_bar_close)
+
+if c10_Sell and SellSetting
+    alert('{"action": "close_at_market_price", "message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 6, "pair": "' + c10Pair + '"}', alert.freq_once_per_bar_close)
+
+if c11_Sell and SellSetting
+    alert('{"action": "close_at_market_price", "message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 7, "pair": "' + c11Pair + '"}', alert.freq_once_per_bar_close)
+
+if c12_Sell and SellSetting
+    alert('{"action": "close_at_market_price", "message_type": "bot", "bot_id": "' + BotID + '", "email_token": "' + EmailToken + '", "delay_seconds": 8, "pair": "' + c12Pair + '"}', alert.freq_once_per_bar_close)
+
+
+
+// ================================== //
+// ---------> Plot shapes <---------- //
+// ================================== //
+
+// This part will plot a simple chart to identify entry or/and exit points, compatible with Gavin's backtester
+
+purple = color.new(color.purple, 0)
+blue = color.new(color.blue, 0)
+red = color.new(color.red, 0)
+yellow = color.new(color.yellow, 0)
+yellow2 = color.new(color.yellow, 50)
+green = color.new(color.green, 0)
+maroon = color.new(color.olive, 0)
+fuschia = color.new(color.fuchsia, 0)
+
+plot(AVINV ? AVINV : na, color=yellow, linewidth=2, title='AVERAGE')
+plot(INV1 ? INV1 : na, color=yellow2, linewidth=1, title='RSI')
+plot(INV2 ? INV2 : na, color=yellow2, linewidth=1, title='CCI')
+plot(INV3 ? INV3 : na, color=yellow2, linewidth=1, title='STOCH')
+plot(INV4 ? INV4 : na, color=yellow2, linewidth=1, title='MFI')
+
+plot(Buy and Signals == 'Buy' ? 1 : 0, 'Buy', color=Buy ? color.green : color.gray)
+
+plot(Buy and Signals == 'Buy + Sell' ? 1 : 0 or Sell and Signals == 'Buy + Sell' ? 2 : 0, 'Buy/Sell', color=Buy ? color.green : Sell ? color.red : color.gray)
+
+plot(Sell and Signals == 'Sell' ? 2 : 0, 'Sell', color=Sell ? color.red : color.gray)
+
+

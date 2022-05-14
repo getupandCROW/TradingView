@@ -1,0 +1,15 @@
+Start with VERY few trade positions and slowly add more to the strategy.
+
+What I have been attempting is to start with LOTS of trade positions and then filtering 
+down to reduce the number of bad trades.
+
+Flip the method and begin with only a few, very dependable trades. Then add indicators,
+individual bots, etc. 
+
+Maybe the OR statement should be used more. All I use is the AND statement to limit and 
+reduce frequency.
+
+
+1. Build the bot that monitors for major breakout events (like the Dogecoin Pump and Dumps)
+across a wide number of coins and scenarios. Be very specific and patient. This bot ONLY 
+activates a position in PERFECT conditions with 100% guaranteed and HUGE winning opportunities.

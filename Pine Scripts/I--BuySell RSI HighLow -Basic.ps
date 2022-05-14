@@ -1,0 +1,38 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Crypto_BitCoinTrader
+
+//@version=5
+indicator(title = "Buy / Sell indicator light version [Crypto_BCT]", shorttitle = "Low / High [Crypto_BCT]", overlay=true, max_labels_count = 500)
+
+rsi_on = input.bool(false, "+ RSI")
+l_bar = input.int(150, "(BUY) Lowest Bar", minval=1)
+rsi_low_value = input.int(27, "(BUY) RSI value <")
+sell_on = input.bool(true, "+ SELL")
+h_bar = input.int(150, "(SELL) Highest Bar", minval=1)
+rsi_high_value = input.int(73, "(SELL) RSI value >")
+rsi = ta.rsi(close, 14)
+lowclosebar = ta.lowestbars(close, l_bar)
+highclosebar = ta.highestbars(close, h_bar)
+color labelbuy = color(color.green)
+color labelsell = color(color.red)
+
+buy_condition = lowclosebar == 0 and rsi_on == false
+buy_condition_rsi = lowclosebar == 0 and rsi_on == true and rsi < rsi_low_value
+
+sell_condition = highclosebar == 0 and rsi_on == false and sell_on
+sell_condition_rsi = highclosebar == 0 and rsi_on == true and rsi > rsi_high_value and sell_on
+
+if buy_condition
+    label.new(bar_index, low, yloc = yloc.belowbar, color=labelbuy, style=label.style_triangleup, size=size.tiny)
+    
+if buy_condition_rsi
+    label.new(bar_index, low, yloc = yloc.belowbar, color=labelbuy, style=label.style_triangleup, size=size.tiny)
+    
+if sell_condition 
+    label.new(bar_index, low, yloc = yloc.abovebar, color=labelsell, style=label.style_triangledown, size=size.tiny)
+    
+if sell_condition_rsi
+    label.new(bar_index, low, yloc = yloc.abovebar, color=labelsell, style=label.style_triangledown, size=size.tiny)
+    
+alertcondition(buy_condition or buy_condition_rsi, title="Low Price Detected", message="Low Price Detected")
+alertcondition(sell_condition or sell_condition_rsi, title="High Price Detected", message="High Price Detected")

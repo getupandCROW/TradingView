@@ -1,0 +1,34 @@
+//SuperTrend ATR 'Average True Range (ATR)
+study(title = "SuperTrend ATR + RSI", shorttitle = "SuperTrend ATR + RSI", overlay = true)
+
+//Mode
+Factor=input(title="Super Trend", defval=3, minval=1,maxval = 100)
+ATR=input(title="ATR", defval=7, minval=1,maxval = 100)
+RSI = input(title="RSI", defval=7, minval=1, maxval = 100)
+
+//Super Trend ATR
+Up=hl2-(Factor*atr(ATR))
+Dn=hl2+(Factor*atr(ATR))
+
+TUp=close[1]>TUp[1]? max(Up,TUp[1]) : Up
+TDown=close[1]<TDown[1]? min(Dn,TDown[1]) : Dn
+
+Trend = close > TDown[1] ? 1: close< TUp[1]? -1: nz(Trend[1],1)
+Tsl = Trend==1? TUp: TDown
+
+linecolor = Trend == 1 ? green : red
+
+//RSI
+src = close,
+
+ep = 2 * RSI - 1
+auc = ema( max( src - src[1], 0 ), ep )
+adc = ema( max( src[1] - src, 0 ), ep )
+x1 = (RSI - 1) * ( adc * 70 / (100-70) - auc)
+ub = iff( x1 >= 0, src + x1, src + x1 * (100-70)/70 )
+x2 = (RSI - 1) * ( adc * 30 / (100-30) - auc)
+lb = iff( x2 >= 0, src + x2, src + x2 * (100-30)/30 )
+
+//Affichage
+plot(avg(ub, lb), color=purple, style = line, linewidth=1, title="RSI")
+plot(Tsl, color = linecolor , style = line , linewidth = 1,title = "SuperTrend ATR")

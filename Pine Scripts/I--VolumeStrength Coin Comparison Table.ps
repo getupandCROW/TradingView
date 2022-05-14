@@ -1,0 +1,290 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+//
+//@version=5
+indicator("Crypto Volume/Strength Comparator", overlay=true, max_bars_back=50)
+import HeWhoMustNotBeNamed/enhanced_ta/10 as eta
+
+timeframe = input.timeframe("", "Timeframe")
+statPosition = input.string(defval=position.middle_center, title='Table     ', 
+             options=[position.bottom_right, position.bottom_left, position.bottom_center, position.top_right, position.top_left, position.top_center, position.middle_right, position.middle_left, position.middle_center], 
+             group='Display', inline="t")
+textSize = input.string(size.normal, title='', options=[size.tiny, size.small, size.normal, size.large, size.huge], group='Display', inline="t")
+statType = input.string('Value', title="Stat Type", group="Display", options=['Value', 'Rank'])
+
+
+maType = input.string("ema", title="Moving Average", group="Technicals", options=["sma", "ema", "hma", "rma", "wma", "vwma", "swma", "linreg", "median"], inline="m")
+maLength = input.int(24, title="", group="Technicals", inline="m")
+
+oscType = input.string("rsi", title="Oscillator   ", group="Technicals", options=["cci", "cmo", "cog", "roc", "rsi", "stoch", "tsi"], inline="o")
+oscLength = input.int(12, title="", group="Technicals", inline="o")
+
+volumeType = input.string("obv", title="Volume Type ", group="Technicals", options=["volume", "obv", "pvt", "pvi", "vwap"])
+
+ticker1 = input.string("BTCUSDT", "", group="Tickers", inline="1")
+ticker2 = input.string("ETHUSDT", "", group="Tickers", inline="1")
+ticker3 = input.string("BNBUSDT", "", group="Tickers", inline="1")
+ticker4 = input.string("SOLUSDT", "", group="Tickers", inline="1")
+
+ticker5 = input.string("ADAUSDT", "", group="Tickers", inline="2")
+ticker6 = input.string("XRPUSDT", "", group="Tickers", inline="2")
+ticker7 = input.string("DOTUSDT", "", group="Tickers", inline="2")
+ticker8 = input.string("DOGEUSDT", "", group="Tickers", inline="2")
+
+ticker9 = input.string("AVAXUSDT", "", group="Tickers", inline="3")
+ticker10 = input.string("SHIBUSDT", "", group="Tickers", inline="3")
+ticker11 = input.string("CROUSDT", "", group="Tickers", inline="3")
+ticker12 = input.string("LUNAUSDT", "", group="Tickers", inline="3")
+
+ticker13 = input.string("LTCUSDT", "", group="Tickers", inline="4")
+ticker14 = input.string("UNIUSDT", "", group="Tickers", inline="4")
+ticker15 = input.string("MATICUSDT", "", group="Tickers", inline="4")
+ticker16 = input.string("LINKUSDT", "", group="Tickers", inline="4")
+
+ticker17 = input.string("BCHUSDT", "", group="Tickers", inline="4")
+ticker18 = input.string("ALGOUSDT", "", group="Tickers", inline="4")
+ticker19 = input.string("MANAUSDT", "", group="Tickers", inline="4")
+ticker20 = input.string("XLMUSDT", "", group="Tickers", inline="4")
+
+
+NUMBER_OF_ELEMENTS = 20
+var tickerArray = array.new_string(NUMBER_OF_ELEMENTS)
+var priceArray = array.new_float(NUMBER_OF_ELEMENTS)
+var oscillatorArray = array.new_float(NUMBER_OF_ELEMENTS)
+var voscillatorArray = array.new_float(NUMBER_OF_ELEMENTS)
+var momentumArray = array.new_float(NUMBER_OF_ELEMENTS)
+var vmomentumArray = array.new_float(NUMBER_OF_ELEMENTS)
+var volatilityArray = array.new_float(NUMBER_OF_ELEMENTS)
+
+var oscillatorRankArray = array.new_int(NUMBER_OF_ELEMENTS)
+var voscillatorRankArray = array.new_int(NUMBER_OF_ELEMENTS)
+var momentumRankArray = array.new_int(NUMBER_OF_ELEMENTS)
+var vmomentumRankArray = array.new_int(NUMBER_OF_ELEMENTS)
+var overallRankArray = array.new_int(NUMBER_OF_ELEMENTS)
+var volatilityRankArray = array.new_int(NUMBER_OF_ELEMENTS)
+
+var oscillatorRankMomentumArray = array.new_int(NUMBER_OF_ELEMENTS)
+var voscillatorRankMomentumArray = array.new_int(NUMBER_OF_ELEMENTS)
+var momentumRankMomentumArray = array.new_int(NUMBER_OF_ELEMENTS)
+var vmomentumRankMomentumArray = array.new_int(NUMBER_OF_ELEMENTS)
+var volatilityRankMomentumArray = array.new_int(NUMBER_OF_ELEMENTS)
+var overallRankMomentumArray = array.new_int(NUMBER_OF_ELEMENTS)
+
+var oscillatorColorArray = array.new_color(NUMBER_OF_ELEMENTS)
+var voscillatorColorArray = array.new_color(NUMBER_OF_ELEMENTS)
+var momentumColorArray = array.new_color(NUMBER_OF_ELEMENTS)
+var vmomentumColorArray = array.new_color(NUMBER_OF_ELEMENTS)
+var volatilityColorArray = array.new_color(NUMBER_OF_ELEMENTS)
+var overallColorArray = array.new_color(NUMBER_OF_ELEMENTS)
+
+var rankIndexArray = array.new_int(NUMBER_OF_ELEMENTS)
+
+var themeColors = array.from(
+         color.rgb(251, 244, 109),
+         color.rgb(141, 186, 81),
+         color.rgb(74, 159, 245),
+         color.rgb(255, 153, 140),
+         color.rgb(255, 149, 0),
+         color.rgb(0, 234, 211),
+         color.rgb(167, 153, 183),
+         color.rgb(255, 210, 113),
+         color.rgb(119, 217, 112),
+         color.rgb(95, 129, 228),
+         color.rgb(235, 146, 190),
+         color.rgb(198, 139, 89),
+         color.rgb(200, 149, 149),
+         color.rgb(196, 182, 182),
+         color.rgb(255, 190, 15),
+         color.rgb(192, 226, 24),
+         color.rgb(153, 140, 235),
+         color.rgb(206, 31, 107),
+         color.rgb(251, 54, 64),
+         color.rgb(194, 255, 217),
+         color.rgb(255, 219, 197),
+         color.rgb(121, 180, 183)
+         )
+
+f_get_momentum(source, maType, maLength)=>
+    ma = eta.ma(source, maType, maLength)
+    diff = 100*(source - ma)/math.abs(source)
+    math.round(ta.linreg(diff, maLength, 0), 2)
+
+f_get_oscillator(source, oscType, oscLength)=>
+    [oscillator, _h, _l] = eta.oscillator(oscType, oscLength, oscLength, oscLength*2, source=source)
+    math.round(oscillator, 2)
+
+f_get_volatility(maLength)=>
+    wvf = ((ta.highest(high, maLength)-low)/(ta.highest(close, maLength)))*100
+    math.round(ta.linreg(wvf, maLength, 0), 2)
+
+f_get_all_technicals()=>
+    vol = volumeType == "volume"? math.sum(volume, maLength) : 
+         volumeType == "obv"? ta.obv :
+         volumeType == "pvt"? ta.pvt :
+         volumeType == "pvi"? ta.pvi : ta.vwap
+    osc_price = f_get_oscillator(close, oscType, oscLength)
+    osc_volume = f_get_oscillator(vol, oscType, oscLength)
+    mom_price = f_get_momentum(close, maType, maLength)
+    mom_volume = f_get_momentum(vol, maType, maLength)
+    volatility = f_get_volatility(maLength)
+    [close, osc_price, osc_volume, mom_price, mom_volume, volatility]
+    
+f_get_technicals(ticker, i)=>
+    [price, osc_price, osc_volume, mom_price, mom_volume, volatility] = request.security(ticker.new(syminfo.prefix, ticker), timeframe, f_get_all_technicals(), ignore_invalid_symbol=true, lookahead=barmerge.lookahead_on)
+    array.set(tickerArray, i, ticker)
+    array.set(priceArray, i, price)
+    array.set(momentumArray, i, mom_price)
+    array.set(vmomentumArray, i, mom_volume)
+    array.set(oscillatorArray, i, osc_price)
+    array.set(voscillatorArray, i, osc_volume)
+    array.set(volatilityArray, i, volatility)
+    i+1
+
+insert_stats_row(table_id, row, text_color, header_bg_color, header_text_color, text_size, header_text_size, header, 
+             osc, oosc, mom, omom, volataility, overall, price, bgOsc, bgOosc, bgMom, bgOmom, bgVol, bgOverall) =>
+    table.cell(table_id=table_id, column=0, row=row, text=str.tostring(header), bgcolor=header_bg_color, text_color=header_text_color, text_size=header_text_size)
+    table.cell(table_id=table_id, column=1, row=row, text=str.tostring(osc), bgcolor=bgOsc, text_color=text_color, text_size=text_size)
+    table.cell(table_id=table_id, column=2, row=row, text=str.tostring(oosc), bgcolor=bgOosc, text_color=text_color, text_size=text_size)
+    table.cell(table_id=table_id, column=3, row=row, text=str.tostring(mom), bgcolor=bgMom, text_color=text_color, text_size=text_size)
+    table.cell(table_id=table_id, column=4, row=row, text=str.tostring(omom), bgcolor=bgOmom, text_color=text_color, text_size=text_size)
+    table.cell(table_id=table_id, column=5, row=row, text=str.tostring(volataility), bgcolor=bgVol, text_color=text_color, text_size=text_size)
+    table.cell(table_id=table_id, column=6, row=row, text=str.tostring(overall), bgcolor=bgOverall, text_color=text_color, text_size=text_size)
+    table.cell(table_id=table_id, column=7, row=row, text=str.tostring(price), bgcolor=bgOverall, text_color=text_color, text_size=text_size)
+    row + 1
+
+get_momentum_symbol(momentum)=>
+    momentum > 0? "⬆": momentum < 0? "⬇" : "▣"
+
+populate_stats(table_id, i, row)=>
+    if(row == 1)
+        headerTextSize = textSize == size.tiny? size.small :
+                             textSize == size.small? size.normal:
+                             textSize == size.normal? size.large: size.huge
+        table.cell(table_id=table_id, column=0, row=0, text=timeframe==""?timeframe.period:timeframe, bgcolor=color.aqua, text_color=color.black, text_size=headerTextSize)
+        insert_stats_row(table_id, row, color.white, color.aqua, color.black, textSize, headerTextSize,
+                 syminfo.prefix , "Oscillator-Price", "Oscillator-Volume", "Momentum-Price", "Momentum-Volume", "Volatility", "Rank", "Price",
+                 color.teal,color.teal,color.teal,color.teal, color.teal, color.teal)
+    else
+        //header_bg_color  = color.maroon
+        header_text_color = color.black
+        text_color = array.get(themeColors, i)
+        header_bg_color = text_color
+        oscColor = array.get(oscillatorColorArray, i)
+        osc = array.get(statType == "Value" ? oscillatorArray : oscillatorRankArray, i)
+        oscValue = get_momentum_symbol(array.get(oscillatorRankMomentumArray, i))+ " " + str.tostring(osc)
+
+        ooscColor = array.get(voscillatorColorArray, i)
+        oosc = array.get(statType == "Value" ? voscillatorArray : voscillatorRankArray, i)
+        ooscValue = get_momentum_symbol(array.get(voscillatorRankMomentumArray, i))+ " " + str.tostring(oosc)
+        
+        momColor = array.get(momentumColorArray, i)
+        mom = array.get(statType == "Value" ? momentumArray : momentumRankArray, i)
+        momValue = get_momentum_symbol(array.get(momentumRankMomentumArray, i))+ " " + str.tostring(mom)
+        
+        omomColor = array.get(vmomentumColorArray, i)
+        omom = array.get(statType == "Value" ? vmomentumArray : vmomentumRankArray, i)
+        omomValue = get_momentum_symbol(array.get(vmomentumRankMomentumArray, i))+ " " + str.tostring(omom)
+        
+        volatilityColor = array.get(volatilityColorArray, i)
+        volataility = array.get(statType == "Value" ? volatilityArray : volatilityRankArray, i)
+        volatilityValue = get_momentum_symbol(array.get(volatilityRankMomentumArray, i))+ " " + str.tostring(volataility)
+        rank = array.get(overallRankArray, i)
+        price = array.get(priceArray, i)
+        overall = get_momentum_symbol(array.get(overallRankMomentumArray, i))+ " " + str.tostring(rank)
+        overallColor = array.get(overallColorArray, i)
+        ticker = array.get(tickerArray, i)
+        insert_stats_row(table_id, row, text_color, header_bg_color, header_text_color, textSize, textSize,
+                 ticker, oscValue, ooscValue, momValue, omomValue, volatilityValue, overall, price, oscColor, ooscColor,
+                 momColor, omomColor, volatilityColor, overallColor)
+
+set_rank(mainArray, sortedArray, rankArray, colorArray, i)=>
+    val = array.get(mainArray, i)
+    rank = array.indexof(sortedArray, val)+1
+    array.set(rankArray, i, rank)
+    array.set(colorArray, i, color.new(color.from_gradient(rank, 1, NUMBER_OF_ELEMENTS, color.green, color.red), 80))
+
+calculate_ranks(mainArray, rankArray, colorArray, order=order.descending)=>
+    sortedArray = array.copy(mainArray)
+    array.sort(sortedArray, order)
+    for i=0 to array.size(mainArray)-1
+        set_rank(mainArray, sortedArray, rankArray, colorArray, i)
+
+calculate_overall_rank()=>
+    sumArray = array.new_int(NUMBER_OF_ELEMENTS)
+    for i=0 to NUMBER_OF_ELEMENTS-1
+        sum = array.get(oscillatorRankArray, i) + array.get(voscillatorRankArray, i) + array.get(momentumRankArray, i) + array.get(vmomentumRankArray, i) + array.get(volatilityRankArray, i)
+        array.set(sumArray, i, sum)
+    for i=0 to NUMBER_OF_ELEMENTS-1
+        sum = array.get(oscillatorRankArray, i) + array.get(voscillatorRankArray, i) + array.get(momentumRankArray, i) + array.get(vmomentumRankArray, i) + array.get(volatilityRankArray, i)
+        array.sort(sumArray, order.ascending)
+        rank = array.indexof(sumArray, sum) + 1
+        array.set(overallRankArray, i, rank)
+        array.set(overallColorArray, i, color.new(color.from_gradient(rank, 1, NUMBER_OF_ELEMENTS, color.green, color.red), 80))
+
+calculate_rank_index()=>
+    array.fill(rankIndexArray, na)
+    for i=0 to NUMBER_OF_ELEMENTS-1
+        rank = array.get(overallRankArray, i)-1
+        while(not na(array.get(rankIndexArray, rank)))
+            rank := rank+1
+        array.set(rankIndexArray, rank, i)
+
+
+calculate_rank_momentum(rankArray, previousRankArray, rankMomentumArray)=>
+    for i=0 to array.size(rankArray)-1
+        rank = array.get(rankArray, i)
+        previousRank = array.get(previousRankArray, i)
+        rankMomentum = (rank > previousRank) ? -1 : (rank < previousRank ? 1 : 0)
+        array.set(rankMomentumArray, i, rankMomentum)
+        
+counter = 0
+counter := f_get_technicals(ticker1, counter)
+counter := f_get_technicals(ticker2, counter)
+counter := f_get_technicals(ticker3, counter)
+counter := f_get_technicals(ticker4, counter)
+counter := f_get_technicals(ticker5, counter)
+counter := f_get_technicals(ticker6, counter)
+counter := f_get_technicals(ticker7, counter)
+counter := f_get_technicals(ticker8, counter)
+counter := f_get_technicals(ticker9, counter)
+counter := f_get_technicals(ticker10, counter)
+counter := f_get_technicals(ticker11, counter)
+counter := f_get_technicals(ticker12, counter)
+counter := f_get_technicals(ticker13, counter)
+counter := f_get_technicals(ticker14, counter)
+counter := f_get_technicals(ticker15, counter)
+counter := f_get_technicals(ticker16, counter)
+counter := f_get_technicals(ticker17, counter)
+counter := f_get_technicals(ticker18, counter)
+counter := f_get_technicals(ticker19, counter)
+counter := f_get_technicals(ticker20, counter)
+
+oscillatorRankArrayCopy = array.copy(oscillatorRankArray)
+voscillatorRankArrayCopy = array.copy(voscillatorRankArray)
+momentumRankArrayCopy = array.copy(momentumRankArray)
+vmomentumRankArrayCopy = array.copy(vmomentumRankArray)
+volatilityRankArrayCopy = array.copy(volatilityRankArray)
+overallRankArrayCopy = array.copy(overallRankArray)
+
+calculate_ranks(oscillatorArray, oscillatorRankArray, oscillatorColorArray)
+calculate_ranks(voscillatorArray, voscillatorRankArray, voscillatorColorArray)
+calculate_ranks(momentumArray, momentumRankArray, momentumColorArray)
+calculate_ranks(vmomentumArray, vmomentumRankArray, vmomentumColorArray)
+calculate_ranks(volatilityArray, volatilityRankArray, volatilityColorArray, order.ascending)
+
+calculate_rank_momentum(oscillatorRankArray, oscillatorRankArrayCopy, oscillatorRankMomentumArray)
+calculate_rank_momentum(voscillatorRankArray, voscillatorRankArrayCopy, voscillatorRankMomentumArray)
+calculate_rank_momentum(momentumRankArray, momentumRankArrayCopy, momentumRankMomentumArray)
+calculate_rank_momentum(vmomentumRankArray, vmomentumRankArrayCopy, vmomentumRankMomentumArray)
+calculate_rank_momentum(volatilityRankArray, volatilityRankArrayCopy, volatilityRankMomentumArray)
+
+calculate_overall_rank()
+calculate_rank_momentum(overallRankArray, overallRankArrayCopy, overallRankMomentumArray)
+
+calculate_rank_index()
+var table stats = table.new(position=statPosition, columns=8, rows=array.size(tickerArray)+2, border_width=1)
+
+populate_stats(stats, 0, 1)
+for i=0 to array.size(rankIndexArray)-1
+    index = array.get(rankIndexArray, i)
+    populate_stats(stats, index, i+2)
+

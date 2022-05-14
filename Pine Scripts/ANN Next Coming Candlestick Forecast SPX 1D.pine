@@ -1,0 +1,164 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Noldo
+
+//@version=4
+study("ANN Next Coming Candlestick Forecast SPX 1D" , overlay = true)
+
+src = close 
+
+o = open
+h = high 
+l = low 
+c = close 
+
+_indicator1 = ((o - o[1] ) / (o[1]))
+_indicator2 = ((h - h[1] ) / (h[1]))
+_indicator3 = ((l - l[1] ) / (l[1]))
+_indicator4 = ((c - c[1] ) / (c[1]))
+_indicator5 = (src - src[1]) / src[1]
+
+// Inputs on Tangent Function : 
+
+tangentdiff(_src) => nz((_src - _src[1]) / _src[1] ) 
+
+
+// Deep Learning Activation Function (Tanh) : 
+
+ActivationFunctionTanh(v) => (1 - exp(-2 * v))/( 1 + exp(-2 * v))
+
+
+// DEEP LEARNING 
+
+// INPUTS : 
+
+input_1 = (_indicator1)
+input_2 = (_indicator2)
+input_3 = (_indicator3)
+input_4 = (_indicator4)
+
+
+// LAYERS : 
+
+// Input Layers 
+
+n_0 = ActivationFunctionTanh(input_1 + 0)   
+n_1 = ActivationFunctionTanh(input_2 + 0) 
+n_2 = ActivationFunctionTanh(input_3 + 0) 
+n_3 = ActivationFunctionTanh(input_4 + 0) 
+
+
+// 
+
+
+fun_open() =>
+
+    float _output = na 
+    
+    n_4  = ActivationFunctionTanh(0.030535   * n_0  + 5.113012  * n_1  + -26.085717  * n_2  + -5.320280   * n_3  + 7.354752 ) 
+
+    n_5  = ActivationFunctionTanh(4.167948   * n_0  + 7.225875  * n_1  + -0.871215   * n_2  + -8.894535   * n_3  + -7.064751 )         
+
+    n_6  = ActivationFunctionTanh(-0.806293  * n_0  + -0.304470 * n_1  + -3.909741   * n_2  + -5.009985   * n_3  + 5.127558 ) 
+    
+    n_7  = ActivationFunctionTanh(-29.736063 * n_0  + 28.668433 * n_1  + 0.138417    * n_2  + -57.588543  * n_3  + 2.824914 ) 
+    
+    n_8  = ActivationFunctionTanh(-0.429393  * n_0  + 0.482744  * n_1  + -0.789797   * n_2  + -2.987460   * n_3  + -4.310747 ) 
+    
+    n_9  = ActivationFunctionTanh(1.758357   * n_0  + -0.618090 * n_1  + 2.449362    * n_2  + -1.583126   * n_3  + 1.165846 ) 
+    
+    _output :=  ActivationFunctionTanh(-0.653030 * n_4  + -4.646999 * n_5  + -1.678999  * n_6  + -17.077652  * n_7  + 0.875426 * n_8 + -6.672465 * n_9 + 6.940722) 
+    
+    
+fun_high() =>
+
+    float _output = na 
+    
+    n_4  = ActivationFunctionTanh(10.186543  * n_0  + -30.964897 * n_1  + 21.672385  * n_2  + -40.895894  * n_3  + 7.957443 ) 
+
+    n_5  = ActivationFunctionTanh(-15.252332 * n_0  + 14.845403  * n_1  + 10.621491  * n_2  + -23.817824  * n_3  + 2.947530 )         
+
+    n_6  = ActivationFunctionTanh(-15.179010 * n_0  + -30.011878 * n_1  + 35.650459  * n_2  + -61.480486  * n_3  + 3.898503 ) 
+    
+    n_7  = ActivationFunctionTanh(35.656454  * n_0  + -11.134354 * n_1  + -28.071578 * n_2  + 2.923959    * n_3  + -1.805703 ) 
+    
+    n_8  = ActivationFunctionTanh(3.462374   * n_0  + -13.644019 * n_1  + -30.226394 * n_2  + -1.083953   * n_3  + 23.032872 ) 
+    
+    n_9  = ActivationFunctionTanh(-47.265829 * n_0  + 19.021801  * n_1  + 10.565216  * n_2  + -27.520789  * n_3  + 6.947500 ) 
+    
+    _output :=  ActivationFunctionTanh(-0.696537 * n_4  + -1.349433 * n_5  + 27.262956  * n_6  + -1.042353  * n_7  + -0.540196 * n_8 + -10.735585 * n_9 + 1.303216) 
+
+
+fun_low() =>
+
+    float _output = na 
+    
+    n_4  = ActivationFunctionTanh(4.363108   * n_0  + -18.301472 * n_1  + -15.376884  * n_2  + 21.208559  * n_3  + -0.458119 ) 
+
+    n_5  = ActivationFunctionTanh(-2.651826  * n_0  + 5.205410   * n_1  + -5.920993   * n_2  + -4.847458  * n_3  + 8.315580 )         
+
+    n_6  = ActivationFunctionTanh(13.885322  * n_0  + -5.517922  * n_1  + -15.241118  * n_2  + -8.673229  * n_3  + -4.954015 ) 
+    
+    n_7  = ActivationFunctionTanh(10.490466  * n_0  + -25.201536 * n_1  + 10.262121   * n_2  + -1.116144  * n_3  + -5.254103 ) 
+    
+    n_8  = ActivationFunctionTanh(-14.687736 * n_0  +   9.030202 * n_1  + -17.332462  * n_2  + 8.068070   * n_3  + 0.755134 ) 
+    
+    n_9  = ActivationFunctionTanh( 0.895168  * n_0  +  -1.737740 * n_1  + 4.899143    * n_2  + -7.718495  * n_3  + 5.493688 ) 
+    
+    _output :=  ActivationFunctionTanh(4.132907 * n_4  + -17.501595 * n_5  + 4.617443  * n_6  + -28.476857  * n_7  + -5.888234 * n_8 + -24.434500 * n_9 + 41.318760)
+
+
+fun_close() =>
+
+    float _output = na 
+    
+    n_4  = ActivationFunctionTanh(22.427157  * n_0  + -26.691701 * n_1  + 4.937141    * n_2  + 9.034960    * n_3  + -10.692978 ) 
+
+    n_5  = ActivationFunctionTanh(-38.288087 * n_0  + 10.050028  * n_1  + -44.706345  * n_2  + -17.816354  * n_3  + 30.566226 )         
+
+    n_6  = ActivationFunctionTanh(-33.995444 * n_0  + 14.501766  * n_1  + -43.286508  * n_2  + -13.387415  * n_3  + 24.708075 ) 
+    
+    n_7  = ActivationFunctionTanh(-14.392948 * n_0  + 28.483095  * n_1  + -22.979338  * n_2  + -7.658263   * n_3  + -5.650564  ) 
+    
+    n_8  = ActivationFunctionTanh(28.837901  * n_0  + -26.354494 * n_1  + 0.520683    * n_2  + 25.004913   * n_3  + -17.883236 ) 
+    
+    n_9  = ActivationFunctionTanh(-4.811354  * n_0  + -4.036420  * n_1  + -8.332775   * n_2  + -1.157164   * n_3  + 0.466793 ) 
+    
+    _output :=  ActivationFunctionTanh(-22.053311 * n_4  + 3.652552 * n_5  + -4.390465  * n_6  +  2.103060  * n_7  + 20.027285 * n_8 + 11.510129 * n_9 + -0.415015)
+
+
+// Current Open Values
+
+_chg_open = tangentdiff(o) * 100
+
+_seed_open = (fun_open() - _chg_open) / 100
+
+f_open =  o * (1 - _seed_open)
+
+// Current High Values
+
+_chg_high = tangentdiff(h) * 100
+
+_seed_high = (fun_high() - _chg_high) / 100
+
+f_high =  h * (1 - _seed_high)
+
+// Current Low Values
+
+_chg_low = tangentdiff(l) * 100
+
+_seed_low = (fun_low() - _chg_low) / 100
+
+f_low =  l * (1 - _seed_low)
+
+// Current Close Values 
+
+_chg_c = tangentdiff(c) * 100
+
+_seed_c = (fun_close() - _chg_c) / 100
+
+f_close=  c * (1 - _seed_c)
+
+
+plotcandle(f_close,f_high,f_low,f_open,color=f_close>f_close[1]?color.teal:color.maroon,wickcolor=#5d606b )
+
+

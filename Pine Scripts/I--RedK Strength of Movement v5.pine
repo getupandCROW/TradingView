@@ -1,0 +1,51 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © RedKTrader
+
+//@version=4
+study(title="RedK Strength of Movement v5", shorttitle="RedK_SoM_v5", overlay=false, resolution="", precision = 0)
+price   = input(title = "Source",       defval=close)
+n       = input(title = "Range",        defval=3,   minval=2, maxval=5)
+calc_hl = "High / Low" , calc_se = "Start / End"
+calc    = input(title = "SoM Calculation", options = [calc_se, calc_hl], defval = calc_se)
+length  = input(title = "Avg Length",   defval=10,  minval=1)
+smooth  = input(title = "Smoothing",    defval=3,   minval=1)
+
+// a is the n-bar average change of price - used as a proxy for the "strength of movement"
+// note that in an "n" number of bars, there's actually (n-1) number of "change ranges" 
+// v4.0 optional algos for calculation .. start/end = takes start price - end price  -- this is simpler
+//                                        high/low  = takes highest - lowest of range -- this exposes "breakout attempts"
+
+// calculate average "directional" change per period
+move_se = price - price[n-1]
+move_hl = (highest(price, n) - lowest(price, n)) * sign(move_se)  //need to make this "directional" 
+
+avgmove = calc == calc_se ? 
+  move_se / (n - 1) :
+  move_hl / (n - 1)
+  
+aa      = nz(avgmove / price[n-1])              // v2: for technical accuracy, convert price change from absolute value to a ratio
+b       = wma(aa, length)                       // take the (weighted) average of the change ratio for a length of bars 
+
+// scale the result as a +100/-100 oscillator 
+// v2: updated with adjustment of highest/lowest values to avoid the "confusing visual" 
+s       = stoch(b, max(b,0), min(b,0), length) *2 -100     
+
+ss = wma(s, smooth)                     // final smoothing
+
+col_somraw      = color.new(color.silver, 80)
+col_trendup     = #2962ff
+col_trenddn     = #e91e63
+col_zeroline    = #ffee0044    //yellow with some transparency, which can't be set in hline()
+
+//plots
+hline(  0,  "Zero Line",    color = col_zeroline,   linestyle = hline.style_solid)
+hline(100,  "Upper Border", color = color.green,    linestyle = hline.style_dotted)
+hline(-100, "Lower Border", color = color.red,      linestyle = hline.style_dotted)
+
+plot(s,  title = "K_SoM Raw",   color = col_somraw,  linewidth = 1)
+plot(ss, title = "K_SoM",       color= ss >=0 ? col_trendup : col_trenddn, linewidth = 3)
+
+maxup = s == 100 ? 100 : na
+maxdn = s == -100 ? -100 : na
+plot(maxup, "Max Strength", style = plot.style_circles, color = col_trendup, linewidth = 3)
+plot(maxdn, "Max Weakness", style = plot.style_circles, color = col_trenddn, linewidth = 3)

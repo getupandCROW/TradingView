@@ -1,0 +1,128 @@
+//@version=4
+//Strategy by andCROW
+
+
+strategy(title="Ride The Rocket Breakout - MultiCoin", shorttitle="Rocketv01", overlay=true, 
+     default_qty_type=strategy.percent_of_equity, default_qty_value=50,
+     pyramiding=0, initial_capital=1000, precision=2,
+     commission_value=0.2, commission_type=strategy.commission.percent,
+     calc_on_order_fills=false, calc_on_every_tick=false)
+
+
+// # ========================================================================= #
+
+
+indi = input(defval = 'RSI', title = "Indicator to Show", options =['RSI', 'MACD', 'CCI', 'Momentum', 'Stochastic', 'Stochastic RSI', 'Directional Movement Index', 'CMF', 'OBV', 'ATR', 'Volume Weighted MACD'])
+src = input(close)
+rsilen = input(defval = 14, title = "RSI Length", minval=1)
+macdfast = input(defval = 12, title = "MACD Fast Length", minval=1)
+macdslow = input(defval = 26, title = "MACD Fast Length", minval=1)
+macdsignal = input(defval = 9, title = "MACD Signal Length", minval=1)
+ccilen = input(defval = 20, title = "CCI Length", minval=1)
+momlen = input(defval = 10, title = "Mom Length", minval=1)
+stochk = input(defval = 14, title = "Stoch K", minval=1)
+stochd = input(defval = 3, title = "Stoch D", minval=1)
+stochs = input(defval = 3, title = "Stoch Smooth", minval=1)
+dilen = input(14, minval=1, title="DI Length", minval=1)
+adxsmt = input(14, title="ADX Smoothing", minval=1, maxval=50)
+cmflen = input(defval = 20, title = "CMF Length", minval=1)
+atrlen = input(defval = 14, title = "ATR Length", minval=1)
+vwmacdfast = input(defval = 12, title = "VWMACD Fast Length", minval=1)
+vwmacdslow = input(defval = 26, title = "VWMACD Fast Length", minval=1)
+vwmacdsig = input(defval = 9, title = "VWMACD Signal Length", minval=1)
+
+Rsi = rsi(src, rsilen)
+[macdline, signalline, histline] = macd(src, macdfast, macdslow, macdsignal)
+Cci = cci(src, ccilen)
+Mom = mom(src, momlen)
+Stok = sma(stoch(close, high, low, stochk), stochs)
+Stod = sma(Stok, stochd)
+Stokrsi = sma(stoch(Rsi, Rsi, Rsi, stochk), stochs)
+Stodrsi = sma(Stokrsi, stochd)
+[diplus, diminus, adx] = dmi(dilen, adxsmt)
+Cmfm = ((close-low) - (high-close)) / (high - low)
+Cmfv = Cmfm * volume
+Cmf = sma(Cmfv, cmflen) / sma(volume, cmflen)
+Atr = atr(atrlen)
+vwmacd = ema( volume * close, vwmacdfast ) / ema( volume, vwmacdfast ) - ema( volume * close, vwmacdslow ) / ema( volume, vwmacdslow ) 
+vwmacdsignal = ema(vwmacd, vwmacdsig)
+vwmacdhist = vwmacd - vwmacdsignal
+
+// # ========================================================================= #
+
+
+
+////////////////////////////////////////
+//1 EMA - Short Term
+
+plot_EMA = input(false, title="plot EMA Short Term")
+
+
+emaLowerPeriod = input(12, minval=1, title="EMA Lower Period")
+
+emaLower       = ema(input(open), emaLowerPeriod)
+
+plot(plot_EMA and emaLower ? emaLower : na, color=color.fuchsia, linewidth=2, title="EMA Lower Period")
+
+//2 EMA - Medium Term - Optional
+
+showEMA2 = input(false, title="plot EMA Medium Term")
+
+emaMediumPeriod = input(30, minval=1, title="EMA Medium Period")
+
+emaMedium       = ema(input(open), emaMediumPeriod)
+
+plot(showEMA2 and emaMedium ? emaMedium : na, color=color.aqua, linewidth=2, title="EMA Medium Period")
+
+//1 HMA - Long Term
+
+plot_HMA = input(false, title="plot HMA Long Term")
+
+hmaLongPeriod  = input(200, minval=1, title="HMA Long Period")
+
+hmaLong        = hma(input(open), hmaLongPeriod)
+
+plot(plot_HMA and hmaLong ? hmaLong : na, color=color.gray, linewidth=2, title="HMA Long Period")
+
+
+// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+
+
+var cumVol = 0.
+cumVol += nz(volume)
+shortlen = input(5, minval=1, title = "cumVol EMA Short Length")
+longlen = input(10, minval=1, title = "cumVol EMA Long Length")
+short = ema(volume, shortlen)
+long = ema(volume, longlen)
+currentVol = 100 * (short - long) / long
+//hline(0, color = #787B86, title="Zero")
+//plot(osc, color=#2962FF)
+
+botVol = 0
+volCrossedOver = false
+volCrossedOver := (currentVol[1] < 0) and (currentVol > 0) ? true : false
+
+// # ========================================================================= #
+
+rsiCrossedOver = false
+rsiCrossedOver := (Rsi[1] < 30) and (Rsi > 30) ? true : false
+
+
+
+//////////////////////////////
+// Strategy Entry and Close
+
+//strategy.close("Long", alert_message = "{  \"action\": \"close_at_market_price\",  \"message_type\": \"bot\",  \"bot_id\": 8891144,  \"email_token\": \"75574b82-094c-4c8d-9843-058a372d5fac\",  \"delay_seconds\": 3}")
+
+
+// # ========================================================================= #
+
+//strategy.entry("Long", strategy.long, alert_message = "{  \"message_type\": \"bot\",  \"bot_id\": 8891144,  \"email_token\": \"75574b82-094c-4c8d-9843-058a372d5fac\",  \"delay_seconds\": 0}")
+
+
+// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+
+
+
+
+

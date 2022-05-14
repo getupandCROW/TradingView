@@ -1,0 +1,168 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+
+//@version=4
+//Indicator by CK(pckalai) - Published
+//Strategy by andCROW
+
+//Test Indicator - This script/indicator is designed with the main purpose of identifying the strength of the instrument. 
+//Description added at each methods. Inputs can be changed by users as per their own rules as per their matching style. 
+
+strategy(title="One-Stop Trading STRATEGY-9", shorttitle="OSTStrategy-9", overlay=true, 
+     default_qty_type=strategy.percent_of_equity, default_qty_value=50,
+     pyramiding=0, initial_capital=1000, precision=2,
+     commission_value=0.2, commission_type=strategy.commission.percent,
+     calc_on_order_fills=false, calc_on_every_tick=false)
+
+
+// Make input options that configure backtest date range
+startDate = input(title="Start Date", type=input.integer,
+     defval=1, minval=1, maxval=31)
+startMonth = input(title="Start Month", type=input.integer,
+     defval=1, minval=1, maxval=12)
+startYear = input(title="Start Year", type=input.integer,
+     defval=2022, minval=1800, maxval=2100)
+
+endDate = input(title="End Date", type=input.integer,
+     defval=1, minval=1, maxval=31)
+endMonth = input(title="End Month", type=input.integer,
+     defval=1, minval=1, maxval=12)
+endYear = input(title="End Year", type=input.integer,
+     defval=2023, minval=1800, maxval=2100)
+
+// Look if the close time of the current bar
+// falls inside the date range
+inDateRange = (time >= timestamp(syminfo.timezone, startYear,
+         startMonth, startDate, 0, 0)) and
+     (time < timestamp(syminfo.timezone, endYear, endMonth, endDate, 0, 0))
+
+
+////////////////////////////////////////
+
+plot_pSAR = input(false, title="plot pSAR")
+
+//PSAR - Default PSAR setting with the marking of red and green as per position of above or below candle
+
+pSARbeginningValue   = input(2, minval=0, maxval=10, title="PSAR Beginning Value")
+pSARendValue         = input(2, minval=1, maxval=10, title="PSAR End Value")
+pSARmultiplierValue  = input(2, minval=0, maxval=10, title=" PSAR Multiplier Value" )
+
+pSARbeginningMethod  = pSARbeginningValue * .01
+pSARendMethod        = pSARendValue * .1
+pSARmultiplierMethod = pSARmultiplierValue * .01
+
+pSAR_UpValue         = sar(pSARbeginningMethod, pSARmultiplierMethod, pSARendMethod)
+pSAR_DownValue       = sar(pSARbeginningMethod, pSARmultiplierMethod, pSARendMethod)
+
+pSAR_UpColor         = close >= pSAR_DownValue ? color.green : na
+pSAR_DownColor       = close <= pSAR_UpValue ? color.red : na
+
+plot(plot_pSAR and pSAR_UpValue ? pSAR_UpValue : na, style=plot.style_circles, color=pSAR_UpColor, linewidth=1, title="Upside PSAR")
+plot(plot_pSAR and pSAR_DownValue ? pSAR_DownValue : na, style=plot.style_circles, color=pSAR_DownColor, linewidth=1, title="Downside PSAR")
+
+//Zone Identification - This is once again ATR based method to identify the zone based on its strength
+
+zoneSource     = input(open, title="Source")
+zoneLength     = input(type=input.integer, defval=17, title="ATR Zone Length")
+zoneMultiplier = input(type=input.float, defval=0.4, step=0.1, title="ATR Zone Multiplier")
+zoneATR        = atr(zoneLength)
+
+downZone       =zoneSource+(zoneMultiplier*zoneATR)
+downZoneNew    = nz(downZone[1], downZone)
+downZone       := close[1] < downZoneNew ? min(downZone, downZoneNew) : downZone
+upZone         =zoneSource-(zoneMultiplier*zoneATR)
+upZoneNew      = nz(upZone[1],upZone)
+upZone        := close[1] > upZoneNew ? max(upZone,upZoneNew) : upZone
+
+zoneDecider    = 1
+zoneDecider   := nz(zoneDecider[1], zoneDecider)
+zoneDecider   := zoneDecider == -1 and close > downZoneNew ? 1 : zoneDecider == 1 and close < upZoneNew ? -1 : zoneDecider
+
+redZone        = zoneDecider == -1 and zoneDecider[1] == 1
+greenZone      = zoneDecider == 1 and zoneDecider[1] == -1
+downZoneColor  = (zoneDecider == -1 ? color.red : color.gray)
+upZoneColor    = (zoneDecider == 1 ? color.green : color.gray)
+
+plot_zoneTags = input(false, title="plot Zone Tags")
+
+downZonePlot   = plot(zoneDecider == 1 ? na : downZone, style=plot.style_linebr, linewidth=2, color=color.red, title="Down Zone")
+
+plotshape(plot_zoneTags and redZone ? downZone : na, location=location.absolute, style=shape.diamond, size=size.tiny, color=color.red, transp=0, title="Down Zone Start")
+plotshape(plot_zoneTags and redZone ? downZone : na, location=location.absolute, style=shape.labeldown, size=size.tiny, color=color.red, textcolor=color.white, transp=0, title="Down", text="Down")
+
+    
+upZonePlot     = plot(zoneDecider == 1 ? upZone : na, style=plot.style_linebr, linewidth=2, color=color.green, title="Up Zone")
+
+plotshape(plot_zoneTags and greenZone ? upZone : na, location=location.absolute, style=shape.diamond, size=size.tiny, color=color.green, transp=0, title="Up Zone Start")
+plotshape(plot_zoneTags and greenZone ? upZone : na, location=location.absolute, style=shape.labelup, size=size.tiny, color=color.green, textcolor=color.white, transp=0, title="Up", text="Up")
+
+
+plot_zoneColors = input(false, title="plot Zone Fill Colors")
+
+neutralZonePlot = plot(ohlc4, style=plot.style_circles, linewidth=0, title="Zone Style")
+//fill(neutralZonePlot, downZonePlot, color=downZoneColor, title="Down Zone Color")
+//fill(neutralZonePlot, upZonePlot, color=upZoneColor, title="Up Zone Color")
+
+
+////////////////////////////////////////
+//1 EMA - Short Term
+
+plot_EMA = input(false, title="plot EMA Short Term")
+
+
+emaLowerPeriod = input(12, minval=1, title="EMA Lower Period")
+
+emaLower       = ema(input(open), emaLowerPeriod)
+
+plot(plot_EMA and emaLower ? emaLower : na, color=color.fuchsia, linewidth=2, title="EMA Lower Period")
+
+//2 EMA - Medium Term - Optional
+
+showEMA2 = input(false, title="plot EMA Medium Term")
+
+emaMediumPeriod = input(30, minval=1, title="EMA Medium Period")
+
+emaMedium       = ema(input(open), emaMediumPeriod)
+
+plot(showEMA2 and emaMedium ? emaMedium : na, color=color.aqua, linewidth=2, title="EMA Medium Period")
+
+//1 HMA - Long Term
+
+plot_HMA = input(false, title="plot HMA Long Term")
+
+hmaLongPeriod  = input(200, minval=1, title="HMA Long Period")
+
+hmaLong        = hma(input(open), hmaLongPeriod)
+
+plot(plot_HMA and hmaLong ? hmaLong : na, color=color.gray, linewidth=2, title="HMA Long Period")
+
+//Bar Color
+isCloseAbove   = (close > emaLower and close > hmaLong)
+isCloseBelow   = (close < emaLower and close < hmaLong) 
+isCloseBetween = (close > emaLower and close < hmaLong) or (close < emaLower and close > hmaLong)
+isBullish      = (close > upZone)
+isBearish      = (close < downZone)
+
+isNeutral = (close > pSAR_DownValue and isCloseBelow) or (close < pSAR_DownValue and isCloseAbove)
+
+barcolor((isNeutral or isCloseBetween) ? color.yellow: (isCloseBelow and isBearish) ? color.red: (isCloseBelow and isBullish) ? color.orange:  (isCloseAbove and isBearish) ? color.lime: (isCloseAbove and isBullish) ? color.green : color.black )
+
+//barcolor((isNeutral or isCloseBetween) ? color.yellow: isCloseBelow ? color.red: isCloseAbove ? color.green: color.black)
+
+//Disclaimer: Idea of publishing this script is to identify the strength of the instrument using multiple confirmation. 
+//Disclaimer: Using this indicator, changing inputs, and trading decisions are upto the users/traders.
+
+//////////////////////////////
+// Strategy Entry and Close
+
+strategy.close("Long", when=inDateRange and redZone, alert_message = "{  \"action\": \"close_at_market_price_all\",  \"message_type\": \"bot\",  \"bot_id\": 8891144,  \"email_token\": \"75574b82-094c-4c8d-9843-058a372d5fac\",  \"delay_seconds\": 0}")
+
+strategy.entry("Short", strategy.short, when=inDateRange and redZone, alert_message = "{  \"message_type\": \"bot\",  \"bot_id\": 8891307,  \"email_token\": \"75574b82-094c-4c8d-9843-058a372d5fac\",  \"delay_seconds\": 5}")
+
+// # ========================================================================= #
+
+strategy.close("Short", when=inDateRange and greenZone, alert_message = "{  \"action\": \"close_at_market_price_all\",  \"message_type\": \"bot\",  \"bot_id\": 8891307,  \"email_token\": \"75574b82-094c-4c8d-9843-058a372d5fac\",  \"delay_seconds\": 0}")
+
+strategy.entry("Long", strategy.long, when=inDateRange and greenZone, alert_message = "{  \"message_type\": \"bot\",  \"bot_id\": 8891144,  \"email_token\": \"75574b82-094c-4c8d-9843-058a372d5fac\",  \"delay_seconds\": 5}")
+
+
+// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒

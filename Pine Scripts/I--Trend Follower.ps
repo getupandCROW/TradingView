@@ -1,0 +1,259 @@
+//@version=4
+study("Trend Follower - Dark Mode| jh", overlay=true)
+// Credits:
+// Adapted from the NNFX Baseline Script
+// https://www.tradingview.com/script/XmEVK58c-NNFX-Baseline-Script-Moving-Averages/
+// Credits to Alex Grover for the Quantitative Qualitative Estimation, QQE indicator code.
+// - https://www.tradingview.com/u/alexgrover/
+// - https://www.tradingview.com/script/06pNDfyd-Modular-Filter-Spot-Trends-And-Smooth-Price/
+//
+// Credits to Glaz for the Quantitative Qualitative Estimation, QQE indicator code.
+// - https://www.tradingview.com/u/glaz
+// - https://www.tradingview.com/script/IYfA9R2k-QQE-MT4/
+
+baseline_src = input(title="Baseline Source", type=input.source, defval=close)
+baseline_len = input(title="Baseline Length", type=input.integer, defval=90)
+
+atr_allowance = input(title="ATR Allowance", type=input.float, defval=1)
+atr_sl = input(title="No of ATR for SL", type=input.float, defval=1.5)
+atr_tp = input(title="No of ATR for TP", type=input.float, defval=1)
+show_atr = input(title="Show ATR Bands", type=input.bool, defval=false)
+show_atr_rule = input(title="Show 1 x ATR Violation", type=input.bool, defval=true)
+show_color_bar = input(title="Color Bars", type=input.bool, defval=true)
+textspacing = input(title="Text Label Spacing", defval=10, minval=1)
+
+price = close
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Baseline Stuff
+///////////////////////////////////////////////////
+
+beta = input(0.5,minval=0,maxval=1, title="Modular Filter - Beta")
+feedback = input(true, title="Modular Filter - Feedback")
+z = input(0.5,title="Modular Filter - Feedback Weighting",minval=0,maxval=1)
+
+ma(type, src, len) =>
+    float result = 0
+    if type=="SMA" // Simple
+        result := sma(src, len)
+    if type=="EMA" // Exponential
+        result := ema(src, len)
+    if type=="WMA" // Weighted
+        result := wma(src, len)
+    if type == "RMA"
+        result := rma(src, len)
+    if type=="MF"
+        ts=0.,b=0.,c=0.,os=0.
+        //----
+        alpha = 2/(len+1)
+        a = feedback ? z*src + (1-z)*nz(ts[1],src) : src
+        //----
+        b := a > alpha*a+(1-alpha)*nz(b[1],a) ? a : alpha*a+(1-alpha)*nz(b[1],a)
+        c := a < alpha*a+(1-alpha)*nz(c[1],a) ? a : alpha*a+(1-alpha)*nz(c[1],a)
+        os := a == b ? 1 : a == c ? 0 : os[1]
+        //----
+        upper = beta*b+(1-beta)*c
+        lower = beta*c+(1-beta)*b 
+        ts := os*upper+(1-os)*lower
+        result := ts
+    result
+
+baseline = ma("MF", baseline_src, baseline_len)
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//ATR Stuff
+///////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Main Stuff
+///////////////////////////////////////////////////
+
+///////////////////////////////////////////////////
+// ATR stuff
+///////////////////////////////////////////////////
+
+slMultiplier = atr_sl
+tpMultiplier = atr_tp
+
+atrlength = 14
+atrsmoothing = "RMA"
+
+atr = ma("RMA", tr(true), 14)
+
+///////////////////////////////////////////////////
+//Base Signals
+///////////////////////////////////////////////////
+
+//Signals based on crossover
+base_cross_Long = crossover(price, baseline)
+base_cross_Short = crossover(baseline, price)
+
+//Signals based on signal position
+base_trend_Long = baseline < price ? 1 : 0
+base_trend_Short = baseline > price ? 1 : 0
+
+///////////////////////////////////////////////////
+//ATR Check
+///////////////////////////////////////////////////
+
+distBasefromPrice = abs(baseline - price)
+
+//1 if more than ATR allowance
+atrFail = distBasefromPrice <= (atr * atr_allowance) ? 0 : 1 
+
+//Always 1, unless ATR fails
+allow_enter_ATR = atrFail ? 0 : 1
+
+atrchecklocation = atrFail and base_trend_Long ? baseline - (atr*1) : atrFail and base_trend_Short ? baseline + (atr*1) : na
+
+atr_top_1_time = price + atr
+atr_top_1_5_time = price + (atr * 1.5)
+atr_bottom_1_time = price - atr
+atr_bottom_1_5_time = price - (atr * 1.5)
+
+///////////////////////////////////////////////////
+//Baseline and ATR plots
+///////////////////////////////////////////////////
+codiff = base_cross_Long ? 1 : base_cross_Short ? -1 : na 
+color_bar = close > baseline ? color.green : color.red
+
+//Baseline Plots
+plotarrow(codiff, colorup=color.green, colordown=color.red, transp=20, maxheight=30, offset=0)
+
+A = plot(baseline, color=color_bar, linewidth=1,transp=0, title='Baseline')
+B = plot(price,color=na)
+fill(A,B,color=color_bar, transp=95)
+
+//Plot a circle if price is x ATR distance away from baseline
+plotshape(show_atr_rule ? atrchecklocation : na, style=shape.circle, location=location.absolute, size=size.tiny, color=color.white, transp=20)
+
+//ATR Plots
+tp1 = plot(show_atr ? atr_top_1_time : na, "ATR Top 1", linewidth=1, color=color.blue, transp=55)
+tp2 = plot(show_atr ? atr_bottom_1_time : na, "ATR Bottom 1", linewidth=1, color=color.blue, transp=55)
+fill(tp1, tp2, color=color.blue, transp=show_atr ? 95 : 100)
+
+sl1 = plot(show_atr ? atr_top_1_5_time : na, "ATR Top 1.5", linewidth=1, color=color.orange, transp=55)
+sl2 = plot(show_atr ? atr_bottom_1_5_time : na, "ATR Bottom 1.5", linewidth=1, color=color.orange, transp=55)
+fill(sl1, sl2, color=color.orange, transp=show_atr ? 95 : 100)
+
+///////////////////////////////////////////////////
+//QQE Trend Line
+//Credits to Glaz for the Quantitative Qualitative Estimation, QQE indicator code
+///////////////////////////////////////////////////
+
+signal_len = input(14,title="QQE Trailing Stop / Confirmation Signal Length")
+smoothening = input(5,title="QQE Trailing Stop / Confirmation Smoothening Length")
+qqe_factor = input(4.236,title="QQE Trailing Stop / Confirmation QQE Factor")
+
+qqe_trend_line(src, len, sf, qqe) =>
+    Wilders_Period = len*2-1
+
+    RsiMa = ema(src,sf)
+    
+    AtrRsi = abs(RsiMa[1] - RsiMa)
+    MaAtrRsi = ema(AtrRsi, Wilders_Period)
+    dar = ema(MaAtrRsi,Wilders_Period) * qqe
+    
+    longband = 0.0
+    shortband=0.0
+    trend = 0
+    
+    DeltaFastAtrRsi= dar
+    RSIndex=RsiMa
+    newshortband=  RSIndex + DeltaFastAtrRsi
+    newlongband= RSIndex - DeltaFastAtrRsi
+    longband := RSIndex[1] > longband[1] and RSIndex > longband[1]? max(longband[1],newlongband):newlongband
+    shortband := RSIndex[1] < shortband[1] and  RSIndex < shortband[1]? min(shortband[1], newshortband):newshortband
+    trend := cross(RSIndex, shortband[1])?1:cross(longband[1], RSIndex)?-1:nz(trend[1],1)
+    FastAtrRsiTL = trend==1? longband: shortband
+    
+    //Set to zero cross
+    FastAtrRsiTL_plot = FastAtrRsiTL
+
+qqe_trailing_stop = qqe_trend_line (ohlc4, signal_len, smoothening, qqe_factor)
+
+qqe_trailing_stop_color = price > qqe_trailing_stop ? color.green : price < qqe_trailing_stop ? color.red : color.white
+
+plot(qqe_trailing_stop, "Trailing Stop", linewidth=3, color=qqe_trailing_stop_color, transp=20, style=plot.style_cross)
+
+///////////////////////////////////////////////////
+//Absolute Strength Histogram
+//Credits to alexgrover for the original ASH code
+///////////////////////////////////////////////////
+
+//----
+Length = input(8,title="ASH Period of Evaluation")
+Smooth = input(1,title="ASH Period of Smoothing")
+Mode = input(title="Indicator Method", defval="RSI", options=["RSI", "STOCHASTIC","ADX"])
+ash_ma_type = input(title="MA", type=input.string, defval="WMA", options=["SMA", "EMA", "WMA"])
+
+//----
+Price1 = ma("SMA",price,1)
+Price2 = ma("SMA",price[1],1)
+
+//RSI
+Bulls0 = 0.5*(abs(Price1-Price2)+(Price1-Price2))
+Bears0 = 0.5*(abs(Price1-Price2)-(Price1-Price2))
+
+//STOCHASTIC
+Bulls1 = Price1 - lowest(Price1,Length)
+Bears1 = highest(Price1,Length) - Price1
+
+//ADX
+Bulls2 = 0.5*(abs(high-high[1])+(high-high[1]))
+Bears2 = 0.5*(abs(low[1]-low)+(low[1]-low))
+
+//
+Bulls = Mode == "RSI" ? Bulls0 : Mode == "STOCHASTIC" ? Bulls1 : Bulls2
+Bears = Mode == "RSI" ? Bears0 : Mode == "STOCHASTIC" ? Bears1 : Bears2
+AvgBulls=ma(ash_ma_type,Bulls,Length)     
+AvgBears=ma(ash_ma_type,Bears,Length)
+
+//----
+SmthBulls=ma(ash_ma_type,AvgBulls,Smooth)  
+SmthBears=ma(ash_ma_type,AvgBears,Smooth)
+
+trend = SmthBulls > SmthBears ? "bulls" : "bears"
+
+delta = abs(SmthBulls-SmthBears)
+delta_color = trend == "bulls" ? color.green : color.red
+
+///////////////////////////////////////////////////
+//Final Plots and Mark ups
+//ASH plots at the bottom with squares
+// - Lighted Squares shows strength, Dimmed Squares shows weakness
+//Bar Colors
+// - Green for long trend, Red for long trend, Yellow for conflicted signals
+///////////////////////////////////////////////////
+
+volumeCheck = (delta > SmthBulls or delta > SmthBears) ? 1 : 0
+plotshape(volumeCheck, color = delta_color, style=shape.square, location=location.bottom, transp=0, size=size.tiny)
+plotshape(not volumeCheck, color = delta_color, style=shape.square, location=location.bottom, transp=85, size=size.tiny)
+
+qqe_trailing_stop_trend_long = close > qqe_trailing_stop ? 1 : 0
+qqe_trailing_stop_trend_short = close < qqe_trailing_stop ? 1 : 0
+
+bar_color = base_trend_Long and qqe_trailing_stop_trend_long ? color.green :  base_trend_Short and qqe_trailing_stop_trend_short ? color.red : color.white
+
+barcolor(bar_color)
+
+///////////////////////////////////////////////////
+//ATR Label only works for daily timeframe
+///////////////////////////////////////////////////
+
+current_atr = atr
+previous_atr = atr[1]
+
+label_loc = base_trend_Long ? price-atr*1.5 : base_trend_Short ? price+atr*1.5 : na
+datetime = time - time[1]
+
+l = label.new(time+datetime * textspacing,label_loc, 'Last ATR is '+tostring(previous_atr) + '\nCurrent ATR is '+tostring(current_atr), 
+  color=color.gray, 
+  textcolor=color.white,
+  style=label.style_none,
+  xloc = xloc.bar_time,
+  yloc = yloc.price,
+  size = size.large)
+
+label.delete(l[1])

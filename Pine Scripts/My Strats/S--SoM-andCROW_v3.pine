@@ -1,0 +1,229 @@
+//@version=5
+indicator(title="Strength of Movement [andCROW] v3", shorttitle="SoM_andCROW_v3", overlay=true, precision = 0)
+// # ========================================================================= #
+// #
+// #            > Strength of Movement (RedK)
+// #            > Multi Time Frame
+// #            > Advanced Inputs Section
+// #            > Options Galore
+// #            > WVMA - AVSL - AVSL EQ - RSMI - 
+// #
+// #
+// # ========================================================================= #
+// WorkLog
+// # ========================================================================= #
+// #-----------------------#
+// #  22-05-12 | 15:45:45  #
+// #-----------------------#
+// *   > 1.  
+// *   > 2.  
+// *   > 3.  
+// *   > 4.  
+// *   > 5.  
+// *   > 6.  
+// *   > 7.  
+// *   > 8.  
+// *   > 9.  
+// *   > 10. 
+// # ========================================================================= #
+var grp1 = "Introductory Parameters"
+srcInput = input.source(close, "Price Source",  inline = "21", group = grp1)
+//plot(srcInput, "Price", color.new(color.purple, 70), 6)
+// --************************--*************************-- //
+            // -- Time Frame || Input Selection -- // 
+// --************************--*************************-- //
+// Time Frame Window
+//tfInput = input.timeframe("D", "Timeframe")
+//ma = ta.sma(close, 20)
+//securityNoRepaint(sym, tf, src) =>
+//    request.security(sym, tf, src[barstate.isrealtime ? 1 : 0])[barstate.isrealtime ? 0 : 1]
+//maHTF = securityNoRepaint(syminfo.tickerid, tfInput, ma)
+//plot(maHTF, "MA", color.aqua)
+// Date/Time Display
+//timeAndDateInput = input.time(timestamp("1 Aug 2021 00:00 +0300"), "Date and time")
+//barIsLater = time > timeAndDateInput
+//plotchar(barIsLater, "barIsLater", "🠆", location.top, size = size.tiny)
+// --************************--*************************-- //
+    // -- Currency Symbol || Input Selection -- // 
+// --************************--*************************-- //
+
+symbolInput = input.symbol("AAPL", "Base Symbol",  inline = "21", group = grp1)
+timeframeInput = input.timeframe("D", "Timeframe",  inline = "21", group = grp1)
+periodInput = input(10, "Period",  inline = "21", group = grp1)
+
+v = request.security(symbolInput, timeframeInput, ta.sma(srcInput, periodInput))
+
+plot(v)
+
+// --************************--*************************-- //
+    // -- Session Tracking || Input Selection -- // 
+// --************************--*************************-- //
+
+var grp2 = "Session Tracking"
+
+string sessionInput = input.session("0600-1700", "Session",  inline = "2", group = grp2)
+string daysInput = input.string("1234567", tooltip = "1 = Sunday, 7 = Saturday",  inline = "2", group = grp2)
+
+sessionString = sessionInput + ":" + daysInput
+inSession = not na(time(timeframe.period, sessionString))
+
+bgcolor(inSession ? color.silver : na)
+
+// --************************--*************************-- //
+        // -- Example Indicator and Study Plots -- // 
+// --************************--*************************-- //
+
+// Shading BG by Day of Week
+
+BASE_COLOR = color.navy
+bgColor = dayofweek == dayofweek.monday    ? color.new(BASE_COLOR, 50) :
+        dayofweek == dayofweek.tuesday   ? color.new(BASE_COLOR, 60) :
+        dayofweek == dayofweek.wednesday ? color.new(BASE_COLOR, 70) :
+        dayofweek == dayofweek.thursday  ? color.new(BASE_COLOR, 80) :
+        dayofweek == dayofweek.friday    ? color.new(BASE_COLOR, 90) :
+        color.new(color.blue, 80)
+
+bgcolor(bgColor)
+
+// arrows plotchar example
+//data = close >= open
+//plotchar(data, char='↓', color=lime)
+//plotchar(data, char='↑', location=location.belowbar, color=red)
+
+
+// --************************--*************************-- //
+    // -- Plot VWMA || Grouped Inputs Example -- // 
+// --************************--*************************-- //
+
+
+var grp3 = "MA, Signal, and Plot VWMA"
+
+// The three spaces after "MA source" are Unicode EN spaces (U+2002).
+ma2srcInput   = input(close, "MA 2 Source   ",  inline = "21", group = grp3)
+ma2LengthInput   = input(close, "MA 2 Length",        inline = "21", group = grp3)
+long2srcInput = input(close, "Signal 2 Source", inline = "22", group = grp3)
+long2LengthInput = input(close, "Signal 2 Length",        inline = "22", group = grp3)
+showVWMAInput   = input.bool(true, "Show VWMA",   inline = "02")
+
+
+plot(ta.vwma(close, 10))
+
+
+maLengthInput = input.int(10,           "MA 1 length", inline = "01", minval = 1)
+maColorInput  = input.color(color.aqua, "",          inline = "01")
+bbFactorInput = input.float(1.5,        "BB factor", inline = "02", minval = 0, step = 0.5)
+bbColorInput  = input.color(color.gray, "",          inline = "02")
+showBBInput   = input.bool(true,        "Show BB",   inline = "02")
+maBB      = ta.sma(close, maLengthInput)
+bbWidth = ta.stdev(maBB, maLengthInput) * bbFactorInput
+bbHi    = maBB + bbWidth
+bbLo    = maBB - bbWidth
+bbHiColor = color.new(bbColorInput, high > bbHi ? 60 : 0)
+bbLoColor = color.new(bbColorInput, low  < bbLo ? 60 : 0)
+plot(maBB, "MA", maColorInput)
+plot(showBBInput ? bbHi : na, "BB Hi", bbHiColor, 2)
+plot(showBBInput ? bbLo : na, "BB Lo", bbLoColor, 2)
+
+
+// --************************--*************************-- //
+        // -- Strength of Movement [SoM] -- // 
+// --************************--*************************-- //
+
+
+//price   = input(title = "Source",       defval=close)
+//n       = input(title = "Range",        defval=3,   minval=2, maxval=5)
+//calc_hl = "High / Low" , calc_se = "Start / End"
+//calc    = input(title = "SoM Calculation", options = [calc_se, calc_hl], defval = calc_se)
+//length  = input(title = "Avg Length",   defval=32,  minval=1)
+//smooth  = input(title = "Smoothing",    defval=1,   minval=1)
+//upperX  = input(title = "Upper X Line",    defval=50,   minval=1, maxval=100)
+//lowerX  = input(title = "Lower X Line",    defval=-50,   minval=-100, maxval=-1)
+//
+//h_SoMUpX  = input(true, title="Highlight when K_SoM x Upper_X_Line")
+//h_SoMLwX  = input(true, title="Highlight when K_SoM x Lower_X_Line")
+// # ============================================= #
+// a is the n-bar average change of price 
+//   - used as a proxy for the "strength of movement"
+//
+// note that in an "n" number of bars, 
+// there's actually (n-1) number of "change ranges" 
+//
+// v4.0 optional algos for calculation 
+//   - start/end = takes start price 
+//   - end price  -- this is simpler
+//
+// high/low  = takes highest - lowest of range 
+//   - this exposes "breakout attempts"
+// # ============================================= #
+// calculate average "directional" change per period
+//move_se = price - price[n-1]
+//need to make this "directional" 
+//move_hl = (highest(price, n) - lowest(price, n)) * sign(move_se)  
+//avgmove = calc == calc_se ? 
+//  move_se / (n - 1) :
+//  move_hl / (n - 1)
+
+// v2: for technical accuracy, convert price change from absolute value to a ratio
+//aa = nz(avgmove / price[n-1]) 
+// take the (weighted) average of the change ratio for a length of bars
+//b = wma(aa, length) 
+// scale the result as a +100/-100 oscillator 
+// v2: updated with adjustment of highest/lowest values to avoid the "confusing visual 
+//s = stoch(b, max(b,0), min(b,0), length) *2 -100     
+// final smoothing
+//ss = wma(s, smooth)
+//col_somraw      = color.new(color.silver, 80)
+//col_trendup     = #2962ff
+//col_trenddn     = #e91e63
+//col_zeroline    = #ffee0044    //yellow with some transparency, which can't be set in hline()
+//plots
+//hline(  0,  "Zero Line",    color = col_zeroline,   linestyle = hline.style_solid)
+//hline(120,  "Upper Border", color = color.green,    linestyle = hline.style_dotted)
+//hline(-120, "Lower Border", color = color.red,      linestyle = hline.style_dotted)
+//hline(upperX,  "Upper X Line", color = color.green,    linestyle = hline.style_dotted)
+//hline(lowerX, "Lower X Line", color = color.red,      linestyle = hline.style_dotted)
+//
+//
+//maxup = s == 100 ? 100 : na
+//maxdn = s == -100 ? -100 : na
+//plot(maxup, "Max Strength", style = plot.style_circles, color = col_trendup, linewidth = 3)
+//plot(maxdn, "Max Weakness", style = plot.style_circles, color = col_trenddn, linewidth = 3)
+//x_SoMUpX = (s[1] == 100 or s[2] == 100 or s[3] == 100 or s[4] == 100) ? true : false
+//x_SoMLwX = (s[1] == -100 or s[2] == -100 or s[3] == -100 or s[4] == -100) ? true : false
+//if ((x_SoMUpX) and (h_SoMUpX)) or ((x_SoMLwX) and (h_SoMLwX))
+//plot(s,  title = "K_SoM Raw",   color = col_somraw,  linewidth = 1)
+//plot(ss, title = "K_SoM",       color= ss >=0 ? col_trendup : col_trenddn, linewidth = 3)
+//plot(bar_index, close, title = "K_SoM",      color= ss >=0 ? col_trendup : col_trenddn, linewidth = 3)
+//ssCrossDown = crossunder(ss, upperX) and h_SoMUpX and x_SoMUpX
+//ssCrossUp   = crossover(ss, lowerX) and h_SoMLwX and x_SoMLwX
+//plotarrow(series=ssCrossDown ? -1 :
+//     ssCrossUp ? 1 :
+//     na)
+//alertcondition(condition=ssCrossDown,
+//     message="Quick SoM dropped below slow Upper X Line")
+//alertcondition(condition=ssCrossUp,
+//    message="Quick SoM crossed above slow Lower X Line")
+// Fill Background between High and Low
+//plotID1 = plot(high)
+//plotID2 = plot(math.max(close, open))
+//fill(plotID1, plotID2, color.yellow)
+//rsiCrossDown = crossunder(rsi(close, 7), rsi(close, 21))
+//rsiCrossUp   = crossover(rsi(close, 7), rsi(close, 21))
+//
+//
+//plotarrow(series=rsiCrossDown ? -1 :
+//     rsiCrossUp ? 1 :
+//     na)
+//
+//alertcondition(condition=rsiCrossDown,
+//     message="Quick RSI dropped below slow RSI")
+//
+//alertcondition(condition=rsiCrossUp,
+//     message="Quick RSI crossed above slow RSI")
+//plotshape(x_SoMUpX, "K_SoM crossed Upper X Line", shape.arrowdown, color=color.green, size.large)
+//plotshape(x_SoMLwX, "K_SoM crossed Lower X Line", shape.arrowup, color=color.blue, location.belowbar, size.large)
+//if (x_SoMUpX) and (h_SoMUpX)
+//    line.new(bar_index, close, bar_index, close * 1.01, color = color.green, extend = extend.both)
+//    plotarrow
+//if (x_SoMLwX) and (h_SoMLwX)
+//    line.new(bar_index, close, bar_index, close * 1.01, color = color.red, extend = extend.both)

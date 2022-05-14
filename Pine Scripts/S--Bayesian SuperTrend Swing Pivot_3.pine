@@ -1,0 +1,111 @@
+//@version=4
+
+study(title="Bayesian SuperTrend_3", shorttitle = "BaySprTrndSwngPvt_3", overlay=true, max_bars_back=1000)
+
+
+// --SuperTrend ATR+RSI-- //
+//   SuperTrend ATR+RSI   //
+//   SuperTrend ATR+RSI   //
+// - SuperTrend ATR+RSI - //
+//   SuperTrend ATR+RSI   //
+//   SuperTrend ATR+RSI   //
+// --SuperTrend ATR+RSI-- //
+
+//Mode
+Factor=input(title="Super Trend", defval=3, minval=1,maxval = 100)
+ATR=input(title="ATR", defval=7, minval=1,maxval = 100)
+RSI = input(title="RSI", defval=7, minval=1, maxval = 100)
+
+//Super Trend ATR
+var Up=hl2-(Factor*atr(ATR))
+var Dn=hl2+(Factor*atr(ATR))
+
+var TUp=close[1]>TUp[1]? max(Up,TUp[1]) : Up
+var TDown=close[1]<TDown[1]? min(Dn,TDown[1]) : Dn
+
+var Trend = close > TDown[1] ? 1: close< TUp[1]? -1: nz(Trend[1],1)
+var Tsl = Trend==1? TUp: TDown
+
+var linecolor = Trend == 1 ? green : red
+
+//RSI
+var src = close,
+
+var ep = 2 * RSI - 1
+var auc = ema( max( src - src[1], 0 ), ep )
+var adc = ema( max( src[1] - src, 0 ), ep )
+var x1 = (RSI - 1) * ( adc * 70 / (100-70) - auc)
+var ub = iff( x1 >= 0, src + x1, src + x1 * (100-70)/70 )
+var x2 = (RSI - 1) * ( adc * 30 / (100-30) - auc)
+var lb = iff( x2 >= 0, src + x2, src + x2 * (100-30)/30 )
+
+//Affichage
+plot(avg(ub, lb), color=purple, style = line, linewidth=1, title="RSI")
+plot(Tsl, color = linecolor , style = line , linewidth = 1,title = "SuperTrend ATR")
+
+
+// --Bayesian RSI-- //
+//   Bayesian RSI   //
+//   Bayesian RSI   //
+// - Bayesian RSI - //
+//   Bayesian RSI   //
+//   Bayesian RSI   //
+// --Bayesian RSI-- //
+
+p = input(title="Period", type=integer, defval=30, minval=5, maxval=500)
+t = input(title="Movement Thresh", type=float, defval=1.003, minval=1.001, maxval=1.5, step=0.001)
+r = input(title="Look Range", type=integer, defval=7, minval=1,maxval=500, step=1)
+RSIT = input(title="Jump", type=integer, defval=8, minval=1,maxval=99, step=1)
+BAYEST = input(title="SM", type=integer, defval=3, minval=1,maxval=99, step=1)
+RSIP = input(title="RSIP", type=integer, defval=14, minval=2,maxval=100, step=1)
+var countup = 1
+var countdn = 1
+var countupS = 1
+var countdnS = 1
+for i = p to 1
+    if close[i]/close[i + r] > t
+        countup := countup + 1
+    else
+        countdn := countdn + 1
+    if close[i]/close[i + r] < 2 - t
+        countupS := countupS + 1
+    else
+        countdnS := countdnS + 1
+
+rsi = rsi(open,RSIP)
+
+var countup2 = 1
+var countup3 = 1
+var countup2S = 1
+var countup3S = 1
+for i = p to 1
+    if close[i]/close[i + r] > t and rsi[i + r + 1] > rsi[i + r + 2] + RSIT
+        countup2 := countup2 + 1
+    else
+        countup3 := countup3 + 1
+    if close[i]/close[i + r] < 2 - t and rsi[i + r + 1] < rsi[i + r + 2] - RSIT
+        countup2S := countup2S + 1
+    else
+        countup3S := countup3S + 1
+
+var countup2b = countup2 / p
+var countup3b = countup3 / p
+var countupb = countup / p
+var countdnb = countdn / p
+
+countup2bS = countup2S / p
+countup3bS = countup3S / p
+countupbS = countupS / p
+countdnbS = countdnS / p
+var bayes = 0
+bayes := ((countupb * countup2b) / ((countupb * countup2b) + (countdnb * countup3b))) * 100
+var bayesS = 0
+bayesS := ((countupbS * countup2bS) / ((countupbS * countup2bS) + (countdnbS * countup3bS))) * 100
+var SN1 = sma(bayes,BAYEST)
+var SN2 = sma(bayesS,BAYEST)
+var shortCondition = crossunder(bayesS, SN2) //and rsi < 49
+var longCondition = crossover(bayes, SN1) //and rsi > 59
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+if (shortCondition)
+    strategy.entry("Short", strategy.short)

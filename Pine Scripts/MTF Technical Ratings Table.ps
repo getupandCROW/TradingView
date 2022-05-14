@@ -1,0 +1,553 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Mohamed3nan
+
+//@version=4
+study("MTF Technical Ratings Table", "MTF Table", true, max_boxes_count = 500, max_bars_back = 5000)
+
+cutLastDigit(str) =>
+    s = str + ";"
+    r = str.replace_all(s, "1;", "")
+    if r != s
+        [r, 1]
+    else
+        r := str.replace_all(s, "2;", "")
+        if r != s
+            [r, 2]
+        else
+            r := str.replace_all(s, "3;", "")
+            if r != s
+                [r, 3]
+            else
+                r := str.replace_all(s, "4;", "")
+                if r != s
+                    [r, 4]
+                else
+                    r := str.replace_all(s, "5;", "")
+                    if r != s
+                        [r, 5]
+                    else
+                        r := str.replace_all(s, "6;", "")
+                        if r != s
+                            [r, 6]
+                        else
+                            r := str.replace_all(s, "7;", "")
+                            if r != s
+                                [r, 7]
+                            else
+                                r := str.replace_all(s, "8;", "")
+                                if r != s
+                                    [r, 8]
+                                else
+                                    r := str.replace_all(s, "9;", "")
+                                    if r != s
+                                        [r, 9]
+                                    else
+                                        r := str.replace_all(s, "0;", "")
+                                        if r != s
+                                            [r, 0]
+                
+strToNumInt(str) =>
+    integer = 0    // integer part of the number
+    s_new = str
+    position = 0.0    // handled position of the number.
+    sign = 1          // sign of the number. 1.0 is PLUS and -1.0 is MINUS.
+    for i = 0 to 30
+        [s, digit] = cutLastDigit(s_new) // here we'll cut the digits by one from the string till the string is empty.
+        integer := integer + digit * int(pow(10, position)) // it's just a regular digit.
+        position := position + 1
+        if s == ""
+            break
+        s_new := s                  // If we are here, then there are more digits in the string. Let's handle the next one!
+    sign * (integer)   // We've exited from the loop. Build the returning value.
+
+calculateTimeDividedBy(res) =>
+    timeDividiedBy = time(timeframe.period)
+    if(strToNumInt(res) < 1440)
+        timeDividiedBy := strToNumInt(res) * 60 * 1000
+	for i = 1 to 50
+		if(res == (tostring(i)+"D") or res == "D")
+			timeDividiedBy := i * 1 * 86400000
+			break
+		else if (res == (tostring(i)+"W") or res == "W")
+			timeDividiedBy := i * 7 * 86400000
+			break
+		else if (res == (tostring(i)+"M") or res == "M")
+			timeDividiedBy := i * 30 * 86400000
+			break
+    timeDividiedBy
+
+visible(res)=> 
+     calculateTimeDividedBy(res) >= calculateTimeDividedBy(timeframe.period)
+
+res_to_str(res)=>
+    str = res
+	if(strToNumInt(str) < 60)
+		str := str + "m"
+	else if (strToNumInt(str) >= 60 and strToNumInt(str) <= 1440)
+		str := tostring(strToNumInt(str)/60) + "h"
+	else if (str == "")
+		if(strToNumInt(timeframe.period) < 60)
+			str := "Current:"+ timeframe.period + "m"
+		else if (strToNumInt(timeframe.period) >= 60 and strToNumInt(timeframe.period) <= 1440)
+			str := "Current:"+ tostring(strToNumInt(timeframe.period)/60) + "h"
+		else
+	    	str:= "Current:"+ timeframe.period
+	else
+	    str
+    str
+
+///////////////// Technical Ratings
+// Awesome Oscillator
+AO() => 
+    sma(hl2, 5) - sma(hl2, 34)
+// Stochastic RSI
+StochRSI() =>
+    rsi1 = rsi(close, 14)
+    K = sma(stoch(rsi1, rsi1, rsi1, 14), 3)
+    D = sma(K, 3)
+    [K, D]
+// Ultimate Oscillator
+tl() => close[1] < low ? close[1]: low
+uo(ShortLen, MiddlLen, LongLen) =>
+    Value1 = sum(tr, ShortLen)
+    Value2 = sum(tr, MiddlLen)
+    Value3 = sum(tr, LongLen)
+    Value4 = sum(close - tl(), ShortLen)
+    Value5 = sum(close - tl(), MiddlLen)
+    Value6 = sum(close - tl(), LongLen)
+    float UO = na
+    if Value1 != 0 and Value2 != 0 and Value3 != 0
+        var0 = LongLen / ShortLen
+        var1 = LongLen / MiddlLen
+        Value7 = (Value4 / Value1) * (var0)
+        Value8 = (Value5 / Value2) * (var1)
+        Value9 = (Value6 / Value3)
+        UO := (Value7 + Value8 + Value9) / (var0 + var1 + 1)
+    UO
+// Ichimoku Cloud
+donchian(len) => avg(lowest(len), highest(len))
+ichimoku_cloud() =>
+    conversionLine = donchian(9)
+    baseLine = donchian(26)
+    leadLine1 = avg(conversionLine, baseLine)
+    leadLine2 = donchian(52)
+    [conversionLine, baseLine, leadLine1, leadLine2]
+    
+calcRatingMA(ma, src) => na(ma) or na(src) ? na : (ma == src ? 0 : ( ma < src ? 1 : -1 ))
+calcRating(buy, sell) => buy ? 1 : ( sell ? -1 : 0 )
+calcRatingAll() =>
+    //============== MA =================
+    SMA10 = sma(close, 10)
+    SMA20 = sma(close, 20)
+    SMA30 = sma(close, 30)
+    SMA50 = sma(close, 50)
+    SMA100 = sma(close, 100)
+    SMA200 = sma(close, 200)
+    
+    EMA10 = ema(close, 10)
+    EMA20 = ema(close, 20)
+    EMA30 = ema(close, 30)
+    EMA50 = ema(close, 50)
+    EMA100 = ema(close, 100)
+    EMA200 = ema(close, 200)
+    
+    HullMA9 = hma(close, 9)
+    
+    // Volume Weighted Moving Average (VWMA)
+    VWMA = vwma(close, 20)
+    
+    [IC_CLine, IC_BLine, IC_Lead1, IC_Lead2] = ichimoku_cloud()
+    
+    // ======= Other =============
+    // Relative Strength Index, RSI
+    RSI = rsi(close,14)
+    
+    // Stochastic
+    lengthStoch = 14
+    smoothKStoch = 3
+    smoothDStoch = 3
+    kStoch = sma(stoch(close, high, low, lengthStoch), smoothKStoch)
+    dStoch = sma(kStoch, smoothDStoch)
+    
+    // Commodity Channel Index, CCI
+    CCI = cci(close, 20)
+    
+    // Average Directional Index
+    float adxValue = na, float adxPlus = na, float adxMinus = na
+    [P, M, V] = dmi(14, 14)
+    adxValue := V
+    adxPlus := P
+    adxMinus := M
+    // Awesome Oscillator
+    ao = AO()
+    
+    // Momentum
+    Mom = mom(close, 10)
+    // Moving Average Convergence/Divergence, MACD
+    [macdMACD, signalMACD, _] = macd(close, 12, 26, 9)
+    // Stochastic RSI
+    [Stoch_RSI_K, Stoch_RSI_D] = StochRSI()
+    // Williams Percent Range
+    WR = wpr(14)
+    
+    // Bull / Bear Power
+    BullPower = high - ema(close, 13)
+    BearPower = low - ema(close, 13)
+    // Ultimate Oscillator
+    UO = uo(7,14,28)
+    if not na(UO)
+        UO := UO * 100
+    ///////////////////////////////////////////////////////////////////
+    
+    PriceAvg = ema(close, 50)
+    DownTrend = close < PriceAvg
+    UpTrend = close > PriceAvg
+    // calculate trading recommendation based on SMA/EMA
+    float ratingMA = 0
+    float ratingMAC = 0
+    
+    if not na(SMA10)
+        ratingMA := ratingMA + calcRatingMA(SMA10, close)
+        ratingMAC := ratingMAC + 1
+    if not na(SMA20)
+        ratingMA := ratingMA + calcRatingMA(SMA20, close)
+        ratingMAC := ratingMAC + 1
+    if not na(SMA30)
+        ratingMA := ratingMA + calcRatingMA(SMA30, close)
+        ratingMAC := ratingMAC + 1
+    if not na(SMA50)
+        ratingMA := ratingMA + calcRatingMA(SMA50, close)
+        ratingMAC := ratingMAC + 1
+    if not na(SMA100)
+        ratingMA := ratingMA + calcRatingMA(SMA100, close)
+        ratingMAC := ratingMAC + 1
+    if not na(SMA200)
+        ratingMA := ratingMA + calcRatingMA(SMA200, close)
+        ratingMAC := ratingMAC + 1
+    if not na(EMA10)
+        ratingMA := ratingMA + calcRatingMA(EMA10, close)
+        ratingMAC := ratingMAC + 1
+    if not na(EMA20)
+        ratingMA := ratingMA + calcRatingMA(EMA20, close)
+        ratingMAC := ratingMAC + 1
+    if not na(EMA30)
+        ratingMA := ratingMA + calcRatingMA(EMA30, close)
+        ratingMAC := ratingMAC + 1
+    if not na(EMA50)
+        ratingMA := ratingMA + calcRatingMA(EMA50, close)
+        ratingMAC := ratingMAC + 1
+    if not na(EMA100)
+        ratingMA := ratingMA + calcRatingMA(EMA100, close)
+        ratingMAC := ratingMAC + 1
+    if not na(EMA200)
+        ratingMA := ratingMA + calcRatingMA(EMA200, close)
+        ratingMAC := ratingMAC + 1
+    
+    if not na(HullMA9)
+        ratingHullMA9 = calcRatingMA(HullMA9, close)
+        ratingMA := ratingMA + ratingHullMA9
+        ratingMAC := ratingMAC + 1
+    
+    if not na(VWMA)
+        ratingVWMA = calcRatingMA(VWMA, close)
+        ratingMA := ratingMA + ratingVWMA
+        ratingMAC := ratingMAC + 1
+    
+    float ratingIC = na
+    if not (na(IC_Lead1) or na(IC_Lead2) or na(close) or na(close[1]) or na(IC_BLine) or na(IC_CLine))
+        ratingIC := calcRating(
+         IC_Lead1 > IC_Lead2 and close > IC_Lead1 and close < IC_BLine and close[1] < IC_CLine and close > IC_CLine,
+         IC_Lead2 > IC_Lead1 and close < IC_Lead2 and close > IC_BLine and close[1] > IC_CLine and close < IC_CLine)
+    if not na(ratingIC)
+        ratingMA := ratingMA + ratingIC
+        ratingMAC := ratingMAC + 1
+    
+    ratingMA := ratingMAC > 0 ? ratingMA / ratingMAC : na
+    
+    float ratingOther = 0
+    float ratingOtherC = 0
+    
+    ratingRSI = RSI
+    if not(na(ratingRSI) or na(ratingRSI[1]))
+        ratingOtherC := ratingOtherC + 1
+        ratingOther := ratingOther + calcRating(ratingRSI < 30 and ratingRSI[1] < ratingRSI, ratingRSI > 70 and ratingRSI[1] > ratingRSI)
+    
+    if not(na(kStoch) or na(dStoch) or na(kStoch[1]) or na(dStoch[1]))
+        ratingOtherC := ratingOtherC + 1
+        ratingOther := ratingOther + calcRating(kStoch < 20 and dStoch < 20 and kStoch > dStoch and kStoch[1] < dStoch[1], kStoch > 80 and dStoch > 80 and kStoch < dStoch and kStoch[1] > dStoch[1])
+    
+    ratingCCI = CCI
+    if not(na(ratingCCI) or na(ratingCCI[1]))
+        ratingOtherC := ratingOtherC + 1
+        ratingOther := ratingOther + calcRating(ratingCCI < -100 and ratingCCI > ratingCCI[1], ratingCCI > 100 and ratingCCI < ratingCCI[1])
+    
+    if not(na(adxValue) or na(adxPlus[1]) or na(adxMinus[1]) or na(adxPlus) or na(adxMinus))
+        ratingOtherC := ratingOtherC + 1
+        ratingOther := ratingOther + calcRating(adxValue > 20 and adxPlus[1] < adxMinus[1] and adxPlus > adxMinus, adxValue > 20 and adxPlus[1] > adxMinus[1] and adxPlus < adxMinus)
+    
+    if not(na(ao) or na(ao[1]))
+        ratingOtherC := ratingOtherC + 1
+        ratingOther := ratingOther + calcRating(crossover(ao,0) or (ao > 0 and ao[1] > 0 and ao > ao[1] and ao[2] > ao[1]), crossunder(ao,0) or (ao < 0 and ao[1] < 0 and ao < ao[1] and ao[2] < ao[1]))
+    
+    if not(na(Mom) or na(Mom[1]))
+        ratingOtherC := ratingOtherC + 1
+        ratingOther := ratingOther + calcRating(Mom > Mom[1], Mom < Mom[1])
+    
+    if not(na(macdMACD) or na(signalMACD))
+        ratingOtherC := ratingOtherC + 1
+        ratingOther := ratingOther + calcRating(macdMACD > signalMACD, macdMACD < signalMACD)
+    
+    float ratingStoch_RSI = na
+    if not(na(DownTrend) or na(UpTrend) or na(Stoch_RSI_K) or na(Stoch_RSI_D) or na(Stoch_RSI_K[1]) or na(Stoch_RSI_D[1]))
+        ratingStoch_RSI := calcRating(
+         DownTrend and Stoch_RSI_K < 20 and Stoch_RSI_D < 20 and Stoch_RSI_K > Stoch_RSI_D and Stoch_RSI_K[1] < Stoch_RSI_D[1],
+         UpTrend and Stoch_RSI_K > 80 and Stoch_RSI_D > 80 and Stoch_RSI_K < Stoch_RSI_D and Stoch_RSI_K[1] > Stoch_RSI_D[1])
+    if not na(ratingStoch_RSI)
+        ratingOtherC := ratingOtherC + 1
+        ratingOther := ratingOther + ratingStoch_RSI
+    
+    float ratingWR = na
+    if not(na(WR) or na(WR[1]))
+        ratingWR := calcRating(WR < -80 and WR > WR[1], WR > -20 and WR < WR[1])
+    if not na(ratingWR)
+        ratingOtherC := ratingOtherC + 1
+        ratingOther := ratingOther + ratingWR
+    
+    float ratingBBPower = na
+    if not(na(UpTrend) or na(DownTrend) or na(BearPower) or na(BearPower[1]) or na(BullPower) or na(BullPower[1]))
+        ratingBBPower := calcRating(
+         UpTrend and BearPower < 0 and BearPower > BearPower[1],
+         DownTrend and BullPower > 0 and BullPower < BullPower[1])
+    if not na(ratingBBPower)
+        ratingOtherC := ratingOtherC + 1
+        ratingOther := ratingOther + ratingBBPower
+    
+    float ratingUO = na
+    if not(na(UO))
+        ratingUO := calcRating(UO > 70, UO < 30)
+    if not na(ratingUO)
+        ratingOtherC := ratingOtherC + 1
+        ratingOther := ratingOther + ratingUO
+    
+    ratingOther := ratingOtherC > 0 ? ratingOther / ratingOtherC : na
+    
+    float ratingTotal = 0
+    float ratingTotalC = 0
+    if not na(ratingMA)
+        ratingTotal := ratingTotal + ratingMA
+        ratingTotalC := ratingTotalC + 1
+    if not na(ratingOther)
+        ratingTotal := ratingTotal + ratingOther
+        ratingTotalC := ratingTotalC + 1
+    ratingTotal := ratingTotalC > 0 ? ratingTotal / ratingTotalC : na
+    
+    [ratingTotal, ratingOther, ratingMA, ratingOtherC, ratingMAC]
+    
+//[ratingTotal, ratingOther, ratingMA, ratingOtherC, ratingMAC]  = security(syminfo.tickerid, res, calcRatingAll())
+
+StrongBound = 0.5
+WeakBound = 0.1
+calcRatingStatus(value) =>
+    if -StrongBound > value
+        "Strong Sell\n" + tostring(value*100, "#.##")+"%"
+    else if value < -WeakBound
+        "Sell\n" + tostring(value*100, "#.##")+"%"
+    else if value > StrongBound
+        "Strong Buy\n" + tostring(value*100, "#.##")+"%"
+    else if value > WeakBound
+        "Buy\n" + tostring(value*100, "#.##")+"%"
+    else
+        "Neutral\n" + tostring(value*100, "#.##")+"%"
+
+poscond(value) =>
+    poscond = value > WeakBound
+    poscond
+
+negcond(value) =>
+    negcond = value < -WeakBound
+    negcond
+//////////////////////////////////////////////////////////////////////////
+
+group_candle = "Time Frames"
+check_1 = input(true, "",inline= "ln1", group = group_candle)
+htf_1 = input(title="",type=input.resolution, defval="",inline= "ln1", group = group_candle)
+check_2 = input(true, "" ,inline= "ln1", group = group_candle)
+htf_2 = input(title="",type=input.resolution, defval="360",inline= "ln1", group = group_candle)
+check_3 = input(true, "" ,        inline= "ln2", group = group_candle)
+htf_3 = input(title="",type=input.resolution, defval="1D",inline= "ln2", group = group_candle)
+check_4 = input(true, "" ,        inline= "ln2", group = group_candle)
+htf_4 = input(title="",type=input.resolution, defval="3D",inline= "ln2", group = group_candle)
+check_5 = input(true, "" ,        inline= "ln3", group = group_candle)
+htf_5 = input(title="",type=input.resolution, defval="1W",inline= "ln3", group = group_candle)
+check_6 = input(true, "" ,        inline= "ln3", group = group_candle)
+htf_6 = input(title="",type=input.resolution, defval="1M",inline= "ln3", group = group_candle)
+
+group_stat   = "Table Options"
+show_MAs    = input(true   , "MAs"  , inline="#1", group = group_stat)
+show_Osc   = input(true   , "Oscillators"  , inline="#2", group = group_stat)
+show_All    = input(true   , "All"  , inline="#3", group = group_stat)
+poscol = input(color.green, "Buy Color", inline="#4", group = group_stat)
+neutralcolor = input(color.gray, "Neutral Color", inline="#4", group = group_stat)
+negcol = input(color.red, "Sell Color", inline="#4", group = group_stat)
+
+group_pos = "Tavle Position & Size"
+string  i_tableYpos      = input("top",      "↕",   inline = "01", group = group_pos, options = ["top", "middle", "bottom"])
+string  i_tableXpos      = input("right",    "↔",   inline = "01", group = group_pos, options = ["left", "center", "right"], tooltip = "Position on the chart.")
+int     i_tableRowHeight = input(0,          "|",   inline = "02", group = group_pos, minval = 0, maxval = 100)
+int     i_tableColWidth  = input(0,          "—",   inline = "02", group = group_pos, minval = 0, maxval = 100, tooltip = "0-100. Use 0 to auto-size height and width.")
+string  i_textSize = input("Small", "Panel Text Size", options = ["Auto", "Tiny", "Small", "Normal", "Large", "Huge"], group = group_pos)
+string  textSize   = i_textSize == "Auto" ? size.auto : i_textSize == "Tiny" ? size.tiny : i_textSize == "Small" ? size.small : i_textSize == "Normal" ? size.normal : i_textSize == "Large" ? size.large : size.huge
+
+var table anan = table.new(i_tableYpos + "_" + i_tableXpos, 7, 4, border_width = 3)
+if barstate.islast and check_1
+    table.cell(anan, 1, 0, res_to_str(htf_1), text_color = color.blue, bgcolor = color.new(color.blue, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if barstate.islast and check_2
+    table.cell(anan, 2, 0, res_to_str(htf_2), text_color = color.blue, bgcolor = color.new(color.blue, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if barstate.islast and check_3
+    table.cell(anan, 3, 0, res_to_str(htf_3), text_color = color.blue, bgcolor = color.new(color.blue, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if barstate.islast and check_4
+    table.cell(anan, 4, 0, res_to_str(htf_4), text_color = color.blue, bgcolor = color.new(color.blue, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if barstate.islast and check_5
+    table.cell(anan, 5, 0, res_to_str(htf_5), text_color = color.blue, bgcolor = color.new(color.blue, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if barstate.islast and check_6
+    table.cell(anan, 6, 0, res_to_str(htf_6), text_color = color.blue, bgcolor = color.new(color.blue, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+
+
+[_, _, ratingMA_1, _, _] = security(syminfo.tickerid, (htf_1),calcRatingAll())
+[_, _, ratingMA_2, _, _] = security(syminfo.tickerid, (htf_2),calcRatingAll())
+[_, _, ratingMA_3, _, _] = security(syminfo.tickerid, (htf_3),calcRatingAll())
+[_, _, ratingMA_4, _, _] = security(syminfo.tickerid, (htf_4),calcRatingAll())
+[_, _, ratingMA_5, _, _] = security(syminfo.tickerid, (htf_5),calcRatingAll())
+[_, _, ratingMA_6, _, _] = security(syminfo.tickerid, (htf_6),calcRatingAll())
+
+if barstate.islast and show_MAs 
+    table.cell(anan, 0, 1,  "MAs", text_color = color.blue, bgcolor = color.new(color.blue, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if visible(htf_1)   
+    if barstate.islast and show_MAs and check_1
+        table.cell(anan, 1, 1,calcRatingStatus(ratingMA_1), text_color = poscond(ratingMA_1) ? poscol : negcond(ratingMA_1) ? negcol : color.gray, bgcolor = color.new(poscond(ratingMA_1) ? poscol : negcond(ratingMA_1) ? negcol : color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if not visible(htf_1)
+    if barstate.islast and show_MAs and check_1
+        table.cell(anan, 1, 1,"TF <\nCurrent" , text_color = color.new(color.gray, 50), bgcolor = color.new(color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if visible(htf_2)     
+    if barstate.islast and show_MAs and check_2 
+        table.cell(anan, 2, 1,calcRatingStatus(ratingMA_2), text_color = poscond(ratingMA_2) ? poscol : negcond(ratingMA_2) ? negcol : color.gray, bgcolor = color.new(poscond(ratingMA_2) ? poscol : negcond(ratingMA_2) ? negcol : color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if not visible(htf_2)
+    if barstate.islast and show_MAs and check_2 
+        table.cell(anan, 2, 1,"TF <\nCurrent" , text_color = color.new(color.gray, 50), bgcolor = color.new(color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if visible(htf_3)     
+    if barstate.islast and show_MAs and check_3
+        table.cell(anan, 3, 1,calcRatingStatus(ratingMA_3), text_color = poscond(ratingMA_3) ? poscol : negcond(ratingMA_3) ? negcol : color.gray, bgcolor = color.new(poscond(ratingMA_3) ? poscol : negcond(ratingMA_3) ? negcol : color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if not visible(htf_3)
+    if barstate.islast and show_MAs and check_3
+        table.cell(anan, 3, 1,"TF <\nCurrent" , text_color = color.new(color.gray, 50), bgcolor = color.new(color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if visible(htf_4)     
+    if barstate.islast and show_MAs and check_4 
+        table.cell(anan, 4, 1,calcRatingStatus(ratingMA_4), text_color = poscond(ratingMA_4) ? poscol : negcond(ratingMA_4) ? negcol : color.gray, bgcolor = color.new(poscond(ratingMA_4) ? poscol : negcond(ratingMA_4) ? negcol : color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if not visible(htf_4)
+    if barstate.islast and show_MAs and check_4 
+        table.cell(anan, 4, 1,"TF <\nCurrent" , text_color = color.new(color.gray, 50), bgcolor = color.new(color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if visible(htf_5)     
+    if barstate.islast and show_MAs and check_5
+        table.cell(anan, 5, 1,calcRatingStatus(ratingMA_5), text_color = poscond(ratingMA_5) ? poscol : negcond(ratingMA_5) ? negcol : color.gray, bgcolor = color.new(poscond(ratingMA_5) ? poscol : negcond(ratingMA_5) ? negcol : color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if not visible(htf_5)
+    if barstate.islast and show_MAs and check_5
+        table.cell(anan, 5, 1,"TF <\nCurrent" , text_color = color.new(color.gray, 50), bgcolor = color.new(color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if visible(htf_6)     
+    if barstate.islast and show_MAs and check_6
+        table.cell(anan, 6, 1,calcRatingStatus(ratingMA_6), text_color = poscond(ratingMA_6) ? poscol : negcond(ratingMA_6) ? negcol : color.gray, bgcolor = color.new(poscond(ratingMA_6) ? poscol : negcond(ratingMA_6) ? negcol : color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if not visible(htf_6)
+    if barstate.islast and show_MAs and check_6
+        table.cell(anan, 6, 1,"TF <\nCurrent" , text_color = color.new(color.gray, 50), bgcolor = color.new(color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+
+[_, ratingOther_1, _, _, _] = security(syminfo.tickerid, (htf_1),calcRatingAll())
+[_, ratingOther_2, _, _, _] = security(syminfo.tickerid, (htf_2),calcRatingAll())
+[_, ratingOther_3, _, _, _] = security(syminfo.tickerid, (htf_3),calcRatingAll())
+[_, ratingOther_4, _, _, _] = security(syminfo.tickerid, (htf_4),calcRatingAll())
+[_, ratingOther_5, _, _, _] = security(syminfo.tickerid, (htf_5),calcRatingAll())
+[_, ratingOther_6, _, _, _] = security(syminfo.tickerid, (htf_6),calcRatingAll())
+
+if barstate.islast and show_Osc 
+    table.cell(anan, 0, 2,  "Oscillators", text_color = color.blue, bgcolor = color.new(color.blue, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if visible(htf_1)   
+    if barstate.islast and show_Osc and check_1
+        table.cell(anan, 1, 2,calcRatingStatus(ratingOther_1), text_color = poscond(ratingOther_1) ? poscol : negcond(ratingOther_1) ? negcol : color.gray, bgcolor = color.new(poscond(ratingOther_1) ? poscol : negcond(ratingOther_1) ? negcol : color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if not visible(htf_1)
+    if barstate.islast and show_Osc and check_1
+        table.cell(anan, 1, 2,"TF <\nCurrent" , text_color = color.new(color.gray, 50), bgcolor = color.new(color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if visible(htf_2)     
+    if barstate.islast and show_Osc and check_2 
+        table.cell(anan, 2, 2,calcRatingStatus(ratingOther_2), text_color = poscond(ratingOther_2) ? poscol : negcond(ratingOther_2) ? negcol : color.gray, bgcolor = color.new(poscond(ratingOther_2) ? poscol : negcond(ratingOther_2) ? negcol : color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if not visible(htf_2)
+    if barstate.islast and show_Osc and check_2 
+        table.cell(anan, 2, 2,"TF <\nCurrent" , text_color = color.new(color.gray, 50), bgcolor = color.new(color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if visible(htf_3)     
+    if barstate.islast and show_Osc and check_3
+        table.cell(anan, 3, 2,calcRatingStatus(ratingOther_3), text_color = poscond(ratingOther_3) ? poscol : negcond(ratingOther_3) ? negcol : color.gray, bgcolor = color.new(poscond(ratingOther_3) ? poscol : negcond(ratingOther_3) ? negcol : color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if not visible(htf_3)
+    if barstate.islast and show_Osc and check_3
+        table.cell(anan, 3, 2,"TF <\nCurrent" , text_color = color.new(color.gray, 50), bgcolor = color.new(color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if visible(htf_4)     
+    if barstate.islast and show_Osc and check_4 
+        table.cell(anan, 4, 2,calcRatingStatus(ratingOther_4), text_color = poscond(ratingOther_4) ? poscol : negcond(ratingOther_4) ? negcol : color.gray, bgcolor = color.new(poscond(ratingOther_4) ? poscol : negcond(ratingOther_4) ? negcol : color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if not visible(htf_4)
+    if barstate.islast and show_Osc and check_4 
+        table.cell(anan, 4, 2,"TF <\nCurrent" , text_color = color.new(color.gray, 50), bgcolor = color.new(color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if visible(htf_5)     
+    if barstate.islast and show_Osc and check_5
+        table.cell(anan, 5, 2,calcRatingStatus(ratingOther_5), text_color = poscond(ratingOther_5) ? poscol : negcond(ratingOther_5) ? negcol : color.gray, bgcolor = color.new(poscond(ratingOther_5) ? poscol : negcond(ratingOther_5) ? negcol : color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if not visible(htf_5)
+    if barstate.islast and show_Osc and check_5
+        table.cell(anan, 5, 2,"TF <\nCurrent" , text_color = color.new(color.gray, 50), bgcolor = color.new(color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if visible(htf_6)     
+    if barstate.islast and show_Osc and check_6
+        table.cell(anan, 6, 2,calcRatingStatus(ratingOther_6), text_color = poscond(ratingOther_6) ? poscol : negcond(ratingOther_6) ? negcol : color.gray, bgcolor = color.new(poscond(ratingOther_6) ? poscol : negcond(ratingOther_6) ? negcol : color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if not visible(htf_6)
+    if barstate.islast and show_Osc and check_6
+        table.cell(anan, 6, 2,"TF <\nCurrent" , text_color = color.new(color.gray, 50), bgcolor = color.new(color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+
+[ratingTotal_1, _, _, _, _] = security(syminfo.tickerid, (htf_1),calcRatingAll())
+[ratingTotal_2, _, _, _, _] = security(syminfo.tickerid, (htf_2),calcRatingAll())
+[ratingTotal_3, _, _, _, _] = security(syminfo.tickerid, (htf_3),calcRatingAll())
+[ratingTotal_4, _, _, _, _] = security(syminfo.tickerid, (htf_4),calcRatingAll())
+[ratingTotal_5, _, _, _, _] = security(syminfo.tickerid, (htf_5),calcRatingAll())
+[ratingTotal_6, _, _, _, _] = security(syminfo.tickerid, (htf_6),calcRatingAll())
+
+if barstate.islast and show_All 
+    table.cell(anan, 0, 3,  "All", text_color = color.blue, bgcolor = color.new(color.blue, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if visible(htf_1)   
+    if barstate.islast and show_All and check_1
+        table.cell(anan, 1, 3,calcRatingStatus(ratingTotal_1), text_color = poscond(ratingTotal_1) ? poscol : negcond(ratingTotal_1) ? negcol : color.gray, bgcolor = color.new(poscond(ratingTotal_1) ? poscol : negcond(ratingTotal_1) ? negcol : color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if not visible(htf_1)
+    if barstate.islast and show_All and check_1
+        table.cell(anan, 1, 3,"TF <\nCurrent" , text_color = color.new(color.gray, 50), bgcolor = color.new(color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if visible(htf_2)     
+    if barstate.islast and show_All and check_2 
+        table.cell(anan, 2, 3,calcRatingStatus(ratingTotal_2), text_color = poscond(ratingTotal_2) ? poscol : negcond(ratingTotal_2) ? negcol : color.gray, bgcolor = color.new(poscond(ratingTotal_2) ? poscol : negcond(ratingTotal_2) ? negcol : color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if not visible(htf_2)
+    if barstate.islast and show_All and check_2 
+        table.cell(anan, 2, 3,"TF <\nCurrent" , text_color = color.new(color.gray, 50), bgcolor = color.new(color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if visible(htf_3)     
+    if barstate.islast and show_All and check_3
+        table.cell(anan, 3, 3,calcRatingStatus(ratingTotal_3), text_color = poscond(ratingTotal_3) ? poscol : negcond(ratingTotal_3) ? negcol : color.gray, bgcolor = color.new(poscond(ratingTotal_3) ? poscol : negcond(ratingTotal_3) ? negcol : color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if not visible(htf_3)
+    if barstate.islast and show_All and check_3
+        table.cell(anan, 3, 3,"TF <\nCurrent" , text_color = color.new(color.gray, 50), bgcolor = color.new(color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if visible(htf_4)     
+    if barstate.islast and show_All and check_4 
+        table.cell(anan, 4, 3,calcRatingStatus(ratingTotal_4), text_color = poscond(ratingTotal_4) ? poscol : negcond(ratingTotal_4) ? negcol : color.gray, bgcolor = color.new(poscond(ratingTotal_4) ? poscol : negcond(ratingTotal_4) ? negcol : color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if not visible(htf_4)
+    if barstate.islast and show_All and check_4 
+        table.cell(anan, 4, 3,"TF <\nCurrent" , text_color = color.new(color.gray, 50), bgcolor = color.new(color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if visible(htf_5)     
+    if barstate.islast and show_All and check_5
+        table.cell(anan, 5, 3,calcRatingStatus(ratingTotal_5), text_color = poscond(ratingTotal_5) ? poscol : negcond(ratingTotal_5) ? negcol : color.gray, bgcolor = color.new(poscond(ratingTotal_5) ? poscol : negcond(ratingTotal_5) ? negcol : color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if not visible(htf_5)
+    if barstate.islast and show_All and check_5
+        table.cell(anan, 5, 3,"TF <\nCurrent" , text_color = color.new(color.gray, 50), bgcolor = color.new(color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if visible(htf_6)     
+    if barstate.islast and show_All and check_6
+        table.cell(anan, 6, 3,calcRatingStatus(ratingTotal_6), text_color = poscond(ratingTotal_6) ? poscol : negcond(ratingTotal_6) ? negcol : color.gray, bgcolor = color.new(poscond(ratingTotal_6) ? poscol : negcond(ratingTotal_6) ? negcol : color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+if not visible(htf_6)
+    if barstate.islast and show_All and check_6
+        table.cell(anan, 6, 3,"TF <\nCurrent" , text_color = color.new(color.gray, 50), bgcolor = color.new(color.gray, 80), text_size = textSize, width= i_tableColWidth, height= i_tableRowHeight)
+

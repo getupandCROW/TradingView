@@ -1,0 +1,72 @@
+    // ____  __    ___   ________ ___________  ___________ __  ____ ___ 
+   // / __ )/ /   /   | / ____/ //_/ ____/   |/_  __<  / // / / __ |__ \
+  // / __  / /   / /| |/ /   / ,< / /   / /| | / /  / / // /_/ / / __/ /
+ // / /_/ / /___/ ___ / /___/ /| / /___/ ___ |/ /  / /__  __/ /_/ / __/ 
+// /_____/_____/_/  |_\____/_/ |_\____/_/  |_/_/  /_/  /_/  \____/____/                                              
+
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © blackcat1402
+//@version=4
+
+study("[blackcat] L3 Banker Fund Flow Trend Oscillator", overlay=false)
+
+//functions
+xrf(values, length) =>
+    r_val = float(na)
+    if length >= 1
+        for i = 0 to length by 1
+            if na(r_val) or not na(values[i])
+                r_val  :=  values[i]
+                r_val
+    r_val
+
+xsa(src,len,wei) =>
+    sumf = 0.0
+    ma = 0.0
+    out = 0.0
+    sumf  :=  nz(sumf[1]) - nz(src[len]) + src
+    ma  :=  na(src[len]) ? na : sumf/len
+    out  :=  na(out[1]) ? ma : (src*wei+out[1]*(len-wei))/len
+    out
+    
+//set up a simple model of banker fund flow trend	
+fundtrend = ((3*xsa((close- lowest(low,27))/(highest(high,27)-lowest(low,27))*100,5,1)-2*xsa(xsa((close-lowest(low,27))/(highest(high,27)-lowest(low,27))*100,5,1),3,1)-50)*1.032+50)
+//define typical price for banker fund
+typ = (2*close+high+low+open)/5
+//lowest low with mid term fib # 34
+lol = lowest(low,34)
+//highest high with mid term fib # 34
+hoh = highest(high,34)
+//define banker fund flow bull bear line
+bullbearline = ema((typ-lol)/(hoh-lol)*100,13)
+//define banker entry signal
+bankerentry = crossover(fundtrend,bullbearline) and bullbearline<25
+
+//banker fund entry with yellow candle
+plotcandle(0,50,0,50,color=bankerentry ? color.new(color.yellow,0):na)
+
+//banker increase position with green candle
+plotcandle(fundtrend,bullbearline,fundtrend,bullbearline,color=fundtrend>bullbearline ? color.new(color.green,0):na)
+
+//banker decrease position with white candle
+plotcandle(fundtrend,bullbearline,fundtrend,bullbearline,color=fundtrend<(xrf(fundtrend*0.95,1)) ? color.new(color.white,0):na)
+
+//banker fund exit/quit with red candle
+plotcandle(fundtrend,bullbearline,fundtrend,bullbearline,color=fundtrend<bullbearline ? color.new(color.red,0):na)
+
+//banker fund Weak rebound with blue candle
+plotcandle(fundtrend,bullbearline,fundtrend,bullbearline,color=fundtrend<bullbearline and fundtrend>(xrf(fundtrend*0.95,1)) ? color.new(color.blue,0):na)
+
+//overbought and oversold threshold lines
+h1 = hline(80,color=color.red, linestyle=hline.style_dotted)
+h2 = hline(20, color=color.yellow, linestyle=hline.style_dotted)
+h3 = hline(10,color=color.lime, linestyle=hline.style_dotted)
+h4 = hline(90, color=color.fuchsia, linestyle=hline.style_dotted)
+fill(h2,h3,color=color.yellow,transp=70)
+fill(h1,h4,color=color.fuchsia,transp=70)
+
+alertcondition(bankerentry, title='Alert on Yellow Candle', message='Yellow Candle!')
+alertcondition(fundtrend>bullbearline, title='Alert on Green Candle', message='Green Candle!')
+alertcondition(fundtrend<(xrf(fundtrend*0.95,1)), title='Alert on White Candle', message='White Candle!')
+alertcondition(fundtrend<bullbearline, title='Alert on Red Candle', message='Red Candle!')
+alertcondition(fundtrend<bullbearline and fundtrend>(xrf(fundtrend*0.95,1)), title='Alert on Blue Candle', message='Blue Candle!')

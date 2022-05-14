@@ -1,0 +1,26 @@
+// --*************************- ************************* -*************************-- //
+                        // -- 3 Candle Odds | Simple Start -- // 
+
+
+
+// determine candle direction
+candle_dir = round((close-open)*2)/2
+
+
+shortCondition = (candle_dir[2] >= 0 and candle_dir[1] >= 0 and candle_dir < 0)                         // sell if previous 2 candles were green and this is red
+
+longCondition = (candle_dir[3] < 0 and candle_dir[2] < 0 and candle_dir[1] < 0 and candle_dir > 0)      // buy if previous 3 candles was red, and this candle was green
+
+if (longCondition)
+    strategy.entry("buy", strategy.long)
+
+if (shortCondition)
+    strategy.entry("sell", strategy.short, when = strategy.openprofit > 100)
+
+
+
+    // --*************************- ************************* -*************************-- //
+    
+
+
+    

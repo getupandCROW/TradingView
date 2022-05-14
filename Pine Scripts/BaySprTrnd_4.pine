@@ -1,0 +1,107 @@
+//@version=2
+// Stealthy7 trading scripts are radikal. You have entered the mystical realm of demonic profit.
+// If you like this script, check out my bots at cryptotrader.org/?r=51
+// Let me know if you find any improvements to this script. It is beta. 
+// Please subscribe.
+strategy(title="BaySprTrnd_4", shorttitle="BaySprTrnd_4", overlay=true)
+p = input(title="Period", type=integer, defval=30, minval=5, maxval=500)
+t = input(title="Movement Thresh", type=float, defval=1.003, minval=1.001, maxval=1.5, step=0.001)
+r = input(title="Look Range", type=integer, defval=7, minval=1,maxval=500, step=1)
+RSIT = input(title="Jump", type=integer, defval=8, minval=1,maxval=99, step=1)
+BAYEST = input(title="SM", type=integer, defval=3, minval=1,maxval=99, step=1)
+RSIP = input(title="RSIP", type=integer, defval=14, minval=2,maxval=100, step=1)
+countup = 1
+countdn = 1
+countupS = 1
+countdnS = 1
+for i = p to 1
+    if close[i]/close[i + r] > t
+        countup := countup + 1
+    else
+        countdn := countdn + 1
+    if close[i]/close[i + r] < 2 - t
+        countupS := countupS + 1
+    else
+        countdnS := countdnS + 1
+
+rsi = rsi(open,RSIP)
+
+countup2 = 1
+countup3 = 1
+countup2S = 1
+countup3S = 1
+for i = p to 1
+    if close[i]/close[i + r] > t and rsi[i + r + 1] > rsi[i + r + 2] + RSIT
+        countup2 := countup2 + 1
+    else
+        countup3 := countup3 + 1
+    if close[i]/close[i + r] < 2 - t and rsi[i + r + 1] < rsi[i + r + 2] - RSIT
+        countup2S := countup2S + 1
+    else
+        countup3S := countup3S + 1
+
+countup2b = countup2 / p
+countup3b = countup3 / p
+countupb = countup / p
+countdnb = countdn / p
+
+countup2bS = countup2S / p
+countup3bS = countup3S / p
+countupbS = countupS / p
+countdnbS = countdnS / p
+bayes = 0
+bayes := ((countupb * countup2b) / ((countupb * countup2b) + (countdnb * countup3b))) * 100
+bayesS = 0
+bayesS := ((countupbS * countup2bS) / ((countupbS * countup2bS) + (countdnbS * countup3bS))) * 100
+SN1 = sma(bayes,BAYEST)
+SN2 = sma(bayesS,BAYEST)
+shortCondition = crossunder(bayesS, SN2) //and rsi < 49
+longCondition = crossover(bayes, SN1) //and rsi > 59
+
+
+
+// # ========================================================================= #
+// --SuperTrend- SuperTrend -SuperTrend-- //
+// # ========================================================================= #
+
+//Mode
+Factor=input(title="Super Trend", defval=3, minval=1,maxval = 100)
+ATR=input(title="ATR", defval=7, minval=1,maxval = 100)
+RSI = input(title="RSI", defval=7, minval=1, maxval = 100)
+
+//Super Trend ATR
+Up=hl2-(Factor*atr(ATR))
+Dn=hl2+(Factor*atr(ATR))
+
+TUp=close[1]>TUp[1]? max(Up,TUp[1]) : Up
+TDown=close[1]<TDown[1]? min(Dn,TDown[1]) : Dn
+
+Trend = close > TDown[1] ? 1: close < TUp[1]? -1: nz(Trend[1],1)
+Tsl = Trend == 1? TUp: TDown
+
+linecolor = Trend == 1 ? green : red
+
+//RSI
+src = close,
+
+ep = 2 * RSI - 1
+auc = ema( max( src - src[1], 0 ), ep )
+adc = ema( max( src[1] - src, 0 ), ep )
+x1 = (RSI - 1) * ( adc * 70 / (100-70) - auc)
+ub = iff( x1 >= 0, src + x1, src + x1 * (100-70)/70 )
+x2 = (RSI - 1) * ( adc * 30 / (100-30) - auc)
+lb = iff( x2 >= 0, src + x2, src + x2 * (100-30)/30 )
+
+//Affichage
+plot(avg(ub, lb), color=purple, style = line, linewidth=1, title="RSI")
+plot(Tsl, color = linecolor , style = line , linewidth = 1,title = "SuperTrend ATR")
+
+
+// # ========================================================================= #
+// # ========================================================================= #
+
+
+if (longCondition) and (Trend == 1)
+    strategy.entry("Long", strategy.long)
+if (shortCondition) and (Trend == -1)
+    strategy.entry("Short", strategy.short)

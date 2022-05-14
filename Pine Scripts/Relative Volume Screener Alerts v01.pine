@@ -1,0 +1,65 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © veryfid
+
+//@version=4
+study("Relative Volume Screener Alerts", shorttitle="RVOL Screener Alerts",overlay = true)
+
+lsmalength = input(50,"LSMA Breakout length:" )
+lsma6 = input(true,"Find LSMA 6 entry points?")
+lsma21 = input(true,"Find LSMA 21 entry points?")
+f_triggerRvol(_ticker)=>
+    _x = crossover(linreg(volume,lsmalength,0),0)
+    _y = lsma21 ? crossover(linreg(volume,21,0),0) : na
+    _z = lsma6 ? crossover(linreg(volume,6,0),0) : na  
+    [_co] = security(_ticker, timeframe.period, [_x,_y,_z])
+    _msg = _ticker + ", " + timeframe.period + ": "
+    if _co
+        _msg := _msg + "RVOL Entry Point"
+        alert(_msg,  alert.freq_once_per_bar_close)
+
+t1 = input('FTX:AAVEUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t2 = input('FTX:ALGOUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t3 = input('FTX:AVAXUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t4 = input('FTX:BATUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t5 = input('FTX:BCHUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t6 = input('FTX:BTCUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t7 = input('FTX:DOGEUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t8 = input('FTX:ETHUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t9 = input('FTX:GRTUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t10 = input('FTX:KSHIBUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t11 = input('FTX:LINKUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t12 = input('FTX:LTCUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t13 = input('FTX:MATICUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t14 = input('FTX:MKRUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t15 = input('FTX:NEARUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t16 = input('FTX:PAXGUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t17 = input('FTX:SHIBUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t18 = input('FTX:SOLUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t19 = input('FTX:SUSHIUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t20 = input('FTX:TRXUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t21 = input('FTX:UNIUSD', title=input.symbol, group = "Volume Entry Point Screener")
+t22 = input('FTX:YFIUSD', title=input.symbol, group = "Volume Entry Point Screener")
+
+f_triggerRvol(syminfo.tickerid)
+f_triggerRvol(t1)
+f_triggerRvol(t2)
+f_triggerRvol(t3)
+f_triggerRvol(t4)
+f_triggerRvol(t5)
+f_triggerRvol(t6)
+f_triggerRvol(t7)
+f_triggerRvol(t8)
+f_triggerRvol(t9)
+f_triggerRvol(t10)
+f_triggerRvol(t11)
+f_triggerRvol(t12)
+f_triggerRvol(t13)
+f_triggerRvol(t14)
+f_triggerRvol(t15)
+f_triggerRvol(t16)
+f_triggerRvol(t17)
+f_triggerRvol(t18)
+f_triggerRvol(t19)
+f_triggerRvol(t20)
+f_triggerRvol(t21)
+f_triggerRvol(t22)

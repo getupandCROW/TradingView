@@ -1,0 +1,11 @@
+//@version=3
+study(title="SMA 20/50/100/200", overlay=true)
+short20 = sma(close, 20)
+short50 = sma(close, 50)
+long100 = sma(close, 100)
+long200 = sma(close, 200)
+plot(short20, color = green, title="SMA20")
+plot(short50, color = yellow, title="SMA50")
+plot(long100, color = orange, title="SMA100")
+plot(long200, color = red, title="SMA2000")
+

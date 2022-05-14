@@ -1,0 +1,219 @@
+//@version=5
+indicator("Candle Plot MTF - V5", max_lines_count = 500, max_labels_count = 500, max_boxes_count = 500, max_bars_back = 300, overlay = true)
+
+// SETUP
+
+candleType = input.string("Candlestick", "Candle Type", group = "Setup", options = ["Candlestick", "Heikin Ashi"])
+dintval = input.timeframe("60", "Candle Interval", group = "Setup")
+
+shadeVolume = input(false, "Shade candles based on volume gradient?", group = "Volume", tooltip = "Shade the background of candles and set the border width based on the candle relative volume compared to the previous N candles.\n\nA candle with a lower relative volume will appear more transparent and have a thinner border, while a candle with a higher relative volume will appear more opaque and have a thicker border.")
+volLookback = input.int(50, "Volume Period Lookback", group = "Volume", minval = 1, tooltip = "For 'Volume' type candles only. The number of candles, N, to include in the relative volume profile.")
+// MISC
+
+upColor = input.color(#02A0AEFF, "Bullish Border", group = "Color", inline = "bullish")
+fillColorUp = input.color(#02A0AE4C, "Bullish Fill", group = "Color", inline = "bullish")
+dnColor = input.color(#C000C0FF, "Bearish Border", group = "Color", inline = "bearish")
+fillColorDn = input.color(#C000C04C, "Bearish Fill", group = "Color", inline = "bearish")
+wickColor = input.color(#707070FF, "Wick Color", group = "Color")
+
+candleWidth = input.int(2, "Candle Border Thickness (1 - 5)", group = "Miscellaneous", minval = 1, maxval = 5)
+wickWidth = input.int(3, "Wick Thickness (1 - 5)", group = "Miscellaneous", minval = 1, maxval = 5)
+
+showWick = input(true, "Show Wicks?", group = "Miscellaneous")
+showCountdown = input(true, "Show Countdown?", group = "Miscellaneous", tooltip = "Show a countdown label near the current candle that displays the time remaining until the next interval.")
+countdownOffset = input.int(0, "Countdown Label Offset", minval = 0, tooltip = "The offset in number of candles to the right of the current candle.")
+
+
+var topFillUp = color.new(fillColorUp, 0)
+var topFillDn = color.new(fillColorDn, 0)
+
+// GLOBAL
+
+bar = -1
+bar := nz(bar[1]) + 1
+
+dT = time - time[1]
+dT := math.min(nz(dT[1], time), time - time[1])
+
+start = request.security(syminfo.tickerid, dintval, time, lookahead = barmerge.lookahead_on)
+newSession = ta.change(start) ? 1 : 0
+sinceNew = nz(ta.barssince(newSession), bar)
+
+// auto detect renko
+
+renkoBlock = math.abs(open - close)
+renkoBlock := bar > 1 ? math.abs(open - close) == renkoBlock[1] and (close == high or close == low) ? renkoBlock[1] : -1 : math.abs(open - close) > 0 and (close == high or close == low) ? math.abs(open - close) : -1
+isRenko = renkoBlock >= 0
+
+isChartIntval = isRenko or (sinceNew == 0 and sinceNew[1] == 0 and sinceNew[2] == 0)
+
+// eTF: We use this variable (end time frame) to update a MTF indicator 
+// only on the last candle of the desired interval. Example for 60 
+// math.minute 'dintval' but on a 5-math.minute chart interval:
+
+// 0:55, 1:55, 2:55, 3:55, 4:55, 5:55, etc. 
+
+// These are the last candles in the 60 math.minute interval.
+
+eTF = isChartIntval or (time + dT) == time_close(dintval)
+
+// STYLE
+
+var lineStyle = line.style_solid
+
+o_ = open
+o_ := newSession ? open : nz(o_[1], open)
+
+l_ = low
+l_ := newSession ? low : math.min(low, nz(l_[1], low))
+
+h_ = high
+h_ := newSession ? high : math.max(high, nz(h_[1], high))
+
+haClose = (o_ + h_ + l_ + close) / 4
+
+haOpen = open
+haOpen := newSession ? (nz(haOpen[1]) + nz(haClose[1])) / 2 : nz(haOpen[1]) 
+
+haHigh = math.max(h_, math.max(haOpen, haClose))
+haLow = math.min(l_, math.min(haOpen, haClose))
+
+o = candleType == "Candlestick" ? o_ : haOpen
+h = candleType == "Candlestick" ? h_ : haHigh
+l = candleType == "Candlestick" ? l_ : haLow
+c = candleType == "Candlestick" ? close : haClose
+
+gaps = 0
+gaps := newSession ? 0 : time - time[1] > dT ? nz(gaps[1]) + math.ceil((time - time[1]) / dT) - 1 : nz(gaps[1])
+
+var volumeP = array.new_float()
+    
+var vol = volume
+vol := newSession ? volume : nz(vol[1]) + volume
+
+if newSession
+    array.unshift(volumeP, vol[1])
+    
+    if array.size(volumeP) > volLookback
+        array.pop(volumeP)
+
+getCandle() =>
+    var box body = na
+    var line wickL = na
+    var line wickH = na
+    var int x1 = 0
+        
+    if not isChartIntval
+        col = c > o ? upColor : c < o ? dnColor : wickColor
+        
+        if newSession
+            x1 := time
+            x2 = time_close(dintval) - dT
+            
+            mid = math.floor((time + x2) / (2 * dT)) * dT
+            
+            body := box.new(x1, math.max(o, c), x2, math.min(o, c), border_width = candleWidth, border_style = lineStyle, xloc = xloc.bar_time)
+                
+            if showWick
+                wickL := line.new(mid, o, mid, l, xloc = xloc.bar_time, color = wickColor, style = lineStyle, width = wickWidth)
+                wickH := line.new(mid, c, mid, h, xloc = xloc.bar_time, color = wickColor, style = lineStyle, width = wickWidth)
+    
+        box.set_top(body, math.max(o, c))
+        box.set_bottom(body, math.min(o, c))
+        box.set_border_color(body, col)
+        
+        if shadeVolume
+            avgVol = array.avg(volumeP)
+            stdev = array.stdev(volumeP)
+            
+            lowerV = avgVol - 2.25 * stdev
+            upperV = avgVol + 2.25 * stdev // 1 stdev accounts for 68% of normally distributed data, 2 stdev accounts for 95%, 3 stdev accounts for 99.7%
+        
+            bCol = color.from_gradient(vol, lowerV, upperV, #00000000, c > o ? topFillUp : topFillDn)
+            box.set_bgcolor(body, bCol)
+            
+            rank = math.max(0, math.min(1, (vol - lowerV) / (upperV - lowerV))) // spectrum normalized in standard deviations
+            width = 1 + int(4 * rank) // width is a spectrum from 1 - 5
+            
+            box.set_border_width(body, width)
+            
+            if showWick
+                line.set_width(wickL, width)
+                line.set_width(wickH, width)
+        else
+            bCol = c > o ? fillColorUp : c < o ? fillColorDn : wickColor
+            box.set_bgcolor(body, bCol)
+        
+        if showWick
+            line.set_y1(wickL, c > o ? o : c)
+            line.set_y2(wickL, l)
+            
+            line.set_y1(wickH, c > o ? c : o)
+            line.set_y2(wickH, h)
+    
+// live candles
+
+getCandle()
+        
+var label countdown = na
+var barsInInt = array.new_int()
+
+if newSession
+    b1 = time
+    b2 = ta.valuewhen(newSession, time, 1)
+    b3 = ta.valuewhen(newSession, time, 2)
+    
+    if (b1 - b2) == (b2 - b3)
+        array.push(barsInInt, b1 - b2)
+
+if showCountdown and (barstate.isrealtime or barstate.islastconfirmedhistory)
+    x = time_close(dintval) - dT
+    col = c > o ? upColor : c < o ? dnColor : wickColor
+    x1 = x + countdownOffset * math.ceil(array.avg(barsInInt))
+    
+    if na(countdown)
+        countdown := label.new(x1, c, "", xloc = xloc.bar_time, color = #00000000, size = size.large, style = label.style_label_left, textalign = text.align_right)
+        
+    if newSession
+        label.set_x(countdown, x1)
+        
+    label.set_y(countdown, c)
+    label.set_textcolor(countdown, col)
+    
+    diff = (x + dT - timenow) / 1000
+    cdText = array.new_string()
+    
+    if diff > 2628000 // seconds in one month
+        months = int(math.floor(diff / 2628000))
+        
+        array.push(cdText, (months < 10 ? "0" : "") + str.tostring(months))
+        diff := diff - months * 2628000
+            
+    if diff > 86400 // seconds in one day
+        days = int(math.floor(diff / 86400))
+        
+        array.push(cdText, (days < 10 ? "0" : "") + str.tostring(days))
+        diff := diff - days * 86400
+        
+    if diff > 3600 // seconds in one hour
+        hours = int(math.floor(diff / 3600))
+        
+        array.push(cdText, (hours < 10 ? "0" : "") + str.tostring(hours))
+        diff := diff - hours * 3600
+            
+    if diff > 60 // seconds in one minute
+        minutes = int(math.floor(diff / 60))
+        
+        array.push(cdText, (minutes < 10 ? "0" : "") + str.tostring(minutes))
+        diff := diff - minutes * 60
+    
+    else if array.size(cdText) == 0
+        array.push(cdText, "00") // always show minutes even if zero minutes remain
+        
+    if diff > 0
+        seconds = int(math.floor(diff))
+        array.push(cdText, (seconds < 10 ? "0" : "") + str.tostring(seconds))
+    
+    label.set_text(countdown, array.join(cdText, ":")) 
+    
+    
