@@ -1,48 +1,52 @@
 //@version=5
-strategy(title="Condition Developer Super Study Script [andCROW] v03", shorttitle="CndtnDvlpr_SprStd_v03", overlay=true, precision = 0)
+strategy(title="Condition Developer v04", shorttitle="CndDvlpr_v04", overlay=true, precision = 0)
 
 
 // --*************************- ************************* -*************************-- //
                         // -- plot() | Condition Examples -- // 
 
 
-src                                     =           close
-BULL_COLOR                              =           color.lime
-i                                       =           1
-len                                     =           input(20, "Length")
-float f                                 =           10.5
-closeRoundedToTick                      =           math.round_to_mintick(close)
-st                                      =           ta.supertrend(4, 14)
-var barRange                            =           float(na)
-var firstBarOpen                        =           open
-varip float lastClose                   =           na
-[macdLine, signalLine, histLine]        =           ta.macd(close, 12, 26, 9)
+src                     = close
+
+BULL_COLOR              = color.lime
+i                       = 1
+len                     = input(20, "Length")
+float f                 = 10.5
+closeRoundedToTick      = math.round_to_mintick(close)
+st                      = ta.supertrend(4, 14)
+var barRange            = float(na)
+var firstBarOpen        = open
+varip float lastClose   = na
+
+[macdLine, signalLine, histLine]   = ta.macd(close, 12, 26, 9)
 
 
-priceClose                              =          (close)
-priceOpen                               =          (open)
-priceHigh                               =          (high)
-priceLow                                =          (low)
+priceClose    =  (close)
+priceOpen     =  (open)
+priceHigh     =  (high)
+priceLow      =  (low)
 
-priceClose_1                            =          (close[1])
-priceOpen_1                             =          (open[1])
-priceHigh_1                             =          (high[1])
-priceLow_1                              =          (low[1])
+priceClose_1  =  (close[1])
+priceOpen_1   =  (open[1])
+priceHigh_1   =  (high[1])
+priceLow_1    =  (low[1])
 
-priceClose_2                            =          (close[2])
-priceOpen_2                             =          (open[2])
-priceHigh_2                             =          (high[2])
-priceLow_2                              =          (low[2])
+priceClose_2  =  (close[2])
+priceOpen_2   =  (open[2])
+priceHigh_2   =  (high[2])
+priceLow_2    =  (low[2])
 
-priceClose_3                            =          (close[3])
-priceOpen_3                             =          (open[3])
-priceHigh_3                             =          (high[3])
-priceLow_3                              =          (low[3])
-
-
+priceClose_3  =  (close[3])
+priceOpen_3   =  (open[3])
+priceHigh_3   =  (high[3])
+priceLow_3    =  (low[3])
 
 
 // --*************************- ************************* -*************************-- //
+
+
+
+
 
 
 // --*************************- ************************* -*************************-- //
@@ -68,8 +72,8 @@ en_mn_inp = input(defval=01, title='Backtest End Month', type=integer)
 en_dy_inp = input(defval=01, title='Backtest End Day', type=integer)
 
 // Default Stop Types
-fstp = input(defval=true, title="Fixed Perc stop")
-fper = input(defval=0.1, title='Percentage for fixed stop', type=float)
+fstp = input(defval=true, title="Fixed % stop")
+fper = input(defval=0.1, title='% for fixed stop', type=float)
 atsp = input(defval=false, title="ATR Based stop")
 atrl = input(defval=7, title='ATR Length for stop')
 atrm = input(defval=1, title='ATR Multiplier for stop')
@@ -89,6 +93,14 @@ in_asa = time(period, asa_ses)
 in_eur = time(period, eur_ses)
 in_usa = time(period, usa_ses)
 
+
+
+    // --*************-- //
+    // --*************-- //
+    // --    LOGIC    -- //
+
+
+
 // Long / Short Logic
 dir = dir_inp == "Both" ? strategy.direction.all : 
   dir_inp == "Short Only" ? strategy.direction.short :
@@ -106,8 +118,8 @@ can_trade = asa_inp and not na(in_asa) ? true :
   false
   
 // atr calc for stop
-atr = atr(atrl)
-atr_stp_dst = atr * atrm
+atr_atrl = atr(atrl)
+atr_stp_dst = atr_atrl * atrm
 
 // --------------------------------------------------------- //
 //                                                           //
@@ -127,29 +139,10 @@ atr_stp_dst = atr * atrm
 //
 // --------------------------------------------------------- //
 
-
-
-
-
-
-
-
-    // --*************-- //
-    // --*************-- //
-
-    
-    // --*************-- //
-    // --*************-- //
-
-    
-    // --*************-- //
-    // --*************-- //
-
 //
-//atrPeriodInput        =     input.int(14,       "ATR period",       minval   =  1,              tooltip       =   "Using a period of 1 yields True Range.")
-//
-//var table atrDisplay  =     table.new(position.top_right,   1,  1,  bgcolor  =  color.gray,     frame_width   =   2,    frame_color = color.black)
-//myAtr                 =     ta.atr(atrPeriodInput)
+//atrPeriodInput        =  input.int(14, "ATR period", minval = 1, tooltip = "Using a period of 1 yields True Range.")
+//var table atrDisplay  =  table.new(position.top_right, 1, 1, bgcolor = color.gray, frame_width = 2, frame_color = color.black)
+//myAtr                 =  ta.atr(atrPeriodInput)
 //
 //if barstate.islast
 //    table.cell(atrDisplay, 0, 0, str.tostring(myAtr, format.mintick), text_color = color.white)
@@ -425,3 +418,16 @@ bgcolor(rIsLow ? color.new(color.green, 90) : na)
 //// # ========================================================================= #
 //                    // --- FINISH My Testing --- //
 //// # ========================================================================= #
+
+
+
+    // --*************-- //
+    // --*************-- //
+
+    
+    // --*************-- //
+    // --*************-- //
+
+    
+    // --*************-- //
+    // --*************-- //
