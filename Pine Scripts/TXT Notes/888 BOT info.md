@@ -1,7 +1,7 @@
 # 888 BOT #alerts (open source)
 
 This is an Expert Advisor **EA** or Automated trading script for **longs** and **shorts**, which uses only a Take Profit or, in the worst case, a Stop Loss to close the trade.
-It is a much improved version of the previous **Repanocha**. It does not use **Trailing Stop** or **security()** functions (although using a security function does not mean that the script repaints) and all signals are confirmed, therefore the script doesn`t repaint in alert mode and is accurate in backtest mode. Apart from the previous indicators, some more functions have been added for Stop-Loss, re-entry and leverage.
+It is a much improved version of the previous **Repanocha**. It does not use **Trailing Stop** or **security()** functions (although using a security function does not mean that the script repaints) and all signals are confirmed, therefore the script doesn't repaint in alert mode and is accurate in backtest mode. Apart from the previous indicators, some more functions have been added for Stop-Loss, re-entry and leverage.
 
 ### It uses 8 indicators:
 

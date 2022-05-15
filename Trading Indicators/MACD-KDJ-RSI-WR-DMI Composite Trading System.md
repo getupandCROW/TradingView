@@ -1,13 +1,21 @@
-# L3 Composite MACD-KDJ-RSI-WR-DMI Trading System
+---
 
-author:: [[blackcat]] 
+---
 
-- [blackcat1402](https://www.tradingview.com/u/blackcat1402/)
-- [PREMIUM](https://www.tradingview.com/gopro/?source=badge&feature=pro_premium)
+# Composite Trading System
+#### ***MACD-KDJ-RSI-WR-DMI***
+scriptLevel: "L3"
 
-published:: "Oct 7, 2020"
+
+author: "[[blackcat]]"
+authorAlias: "[[blackcat|blackcat1402]]"
 
 
+tradingViewProfile: "[blackcat1402 Trading View Profile](https://www.tradingview.com/u/blackcat1402/)"
+PremiumTrader: "[PREMIUM Trader](https://www.tradingview.com/gopro/?source=badge&feature=pro_premium)"
+publishDate: "Oct 7, 2020"
+
+***
 
 ## Background  
   
