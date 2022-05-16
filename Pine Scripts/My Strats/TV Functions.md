@@ -25,6 +25,7 @@ indicator("num_methods import")
 #### Indicator
 
 ```js
+//@version=5
 indicator(title, shorttitle, overlay, format, precision, scale, max_bars_back, timeframe, timeframe_gaps, explicit_plot_zorder, max_lines_count, max_labels_count, max_boxes_count) → void
 ```
 
