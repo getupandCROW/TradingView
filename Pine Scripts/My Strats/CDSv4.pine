@@ -1,0 +1,305 @@
+//@version=5
+strategy(title="Condition Developer Strategy v04", shorttitle="CDSv4", overlay=true, precision = 0)
+
+// NOTES:
+//  1 - To use the backtest start and end time you must include
+//      time >= start and time <= end in your entry checks
+//
+//  2 - To use the session input functions you must include the
+//      can_trade check in your entry conditions 
+// 
+//  3 - End of session supported but requires that that close_all
+//      call below is not removed from the strategy. 
+//
+// --------------------------------------------------------- //
+
+// --*************************-*************************-- //
+                      // -- INPUT -- // 
+
+var string GP0 = "Standard Inputs"
+srcInput = input.source(close, "Price Source", group = GP0)
+periodInput = input.int(10, "Period Length", group = GP0)
+
+var string GP1 = "Backtest Start/End Dates"
+// Create General Strategy Inputs
+dir_inp = input.string(defval="Both", title='Trade Direction', options=["Long Only","Short Only","Both"], group = GP1)
+st_yr_inp = input.int(defval=2021, title='Start Year', group = GP1)
+st_mn_inp = input.int(defval=01, title='Start Month', group = GP1)
+st_dy_inp = input.int(defval=01, title='Start Day', group = GP1)
+en_yr_inp = input.int(defval=2025, title='End Year', group = GP1)
+en_mn_inp = input.int(defval=01, title='End Month', group = GP1)
+en_dy_inp = input.int(defval=01, title='End Day', group = GP1)
+
+var string GP2 = "Trading Session"
+// Sessions
+asa_inp = input.bool(defval=false, title="Trade the Asian Session", group = GP2)
+eur_inp = input.bool(defval=false, title="Trade the European Session", group = GP2)
+usa_inp = input.bool(defval=true, title="Trade the US session", group = GP2)
+ses_cls = input.bool(defval=false, title="End of Session Close Out?", group = GP2)
+
+// Session Start / End times (In exchange TZ = UTC-5)    
+asa_ses = "1700-0300" 
+eur_ses = "0200-1200" 
+usa_ses = "0800-1700"  
+
+in_asa = time(timeframe.period, asa_ses)
+in_eur = time(timeframe.period, eur_ses)
+in_usa = time(timeframe.period, usa_ses)
+
+    // --*************-- //
+
+var string GP3 = "ATR Stop Loss"
+// Default Stop Loss Type
+fstp = input.bool(defval=true, title="Fixed %", group = GP3)
+fper = input.float(defval=0.1, title="Percentage", group = GP3)
+atsp = input.bool(defval=false, title="ATR", group = GP3)
+atrl = input.int(defval=7, title="ATR Length", group = GP3)
+atrm = input.int(defval=1, title="ATR Multiplier", group = GP3)
+
+var string GP4 = "Moving Averages for Table"
+int     masQtyInput    = input.int(20, "Quantity", minval = 1, maxval = 40, group = GP4, tooltip = "1-40")
+int     masStartInput  = input.int(20, "Periods begin at", minval = 2, maxval = 200, group = GP4, tooltip = "2-200")
+int     masStepInput   = input.int(20, "Periods increase by", minval = 1, maxval = 100, group = GP4, tooltip = "1-100")
+
+var string GP5 = "MA Table Display"
+string  tableYposInput = input.string("top", "Panel position", inline = "11", options = ["top", "middle", "bottom"], group = GP5)
+string  tableXposInput = input.string("right", "", inline = "11", options = ["left", "center", "right"], group = GP5)
+color   bullColorInput = input.color(color.new(color.green, 30), "Bull", inline = "12", group = GP5)
+color   bearColorInput = input.color(color.new(color.red, 30), "Bear", inline = "12", group = GP5)
+color   neutColorInput = input.color(color.new(color.black , 30), "Neutral", inline = "12", group = GP5)
+color   textColorInput = input.color(color.new(color.white , 30), "Text", inline = "12", group = GP5)
+
+    // --*************-- //
+
+var string GP6 = "AlertLevelCheck"
+// RSMI
+i_srcPrice  = input.source(close, "SMI Price Source", group = GP6)
+i_SMI_len   = input.int(13, "SMI Length", minval = 1, group = GP6)
+i_smth1     = input.int(25, "Smooth Length 1", minval = 1, group = GP6)
+i_smth2     = input.int(2, "Smooth Length 2", minval = 1, group = GP6)
+i_sigLen    = input.int(12, "Signal Length", minval = 1, group = GP6)
+i_alrtInfo  = input.bool(true, "Show Alert Labels", inline = "AlertLevelCheck", group = GP6)
+i_alrtLines = input.bool(false, "Show Alert Lines", inline = "AlertLevelCheck", group = GP6)
+i_alrtHi    = input.float(40, "Upper Alert Level",   minval = -100, maxval = 100, group = GP6)
+i_midLine   = input.int(0, "Midline", minval = -100, maxval = 100, group = GP6)
+i_alrtLo    = input.float(-40, "Lower Alert Level",   minval = -100, maxval = 100, group = GP6)
+i_decimalP  = input.int(2, "Prices Decimal Places", minval = 0, maxval = 10, group = GP6)
+i_infoBox   = input.bool(true, "Show Info Box", inline = "InfoBox", group = GP6)
+i_boxOffSet = input.int(5, "Info Box Offset", minval = 1, maxval = 50, inline = "InfoBox", group = GP6)
+
+
+
+// --*************************-*************************-- //
+                      // -- LOGIC -- // 
+
+
+
+
+
+    // --*************-- //
+
+
+// Set start and end dates for backtest
+start = timestamp(st_yr_inp, st_mn_inp, st_dy_inp,00,00)
+end = timestamp(en_yr_inp, en_mn_inp, en_dy_inp,00,00)
+
+// Check if we are in a sessions we want to trade
+can_trade = asa_inp and not na(in_asa) ? true : eur_inp and not na(in_eur) ? true : usa_inp and not na(in_usa) ? true : false
+  
+// atr calculation for stop
+atr = ta.atr(atrl)
+atr_stp_dst = atr * atrm
+
+
+    // --*************-- //
+
+
+// Long / Short Logic
+dir = dir_inp == "Both" ? strategy.direction.all : dir_inp == "Short Only" ? strategy.direction.short : strategy.direction.long
+
+strategy.risk.allow_entry_in(dir)
+
+var bool long_condition = false
+var bool short_condition = false
+
+
+    // --*************-- //
+
+
+// determine candle direction
+candle_dir = math.round((close-open)*2)/2
+
+// sell if previous 2 candles were green and this is red
+short_condition := (candle_dir[2] >= 0 and candle_dir[1] >= 0 and candle_dir < 0)
+
+// buy if previous 3 candles was red, and this candle was green
+long_condition := (candle_dir[3] < 0 and candle_dir[2] < 0 and candle_dir[1] < 0 and candle_dir > 0)
+
+
+    // --*************-- //
+
+
+// RSMI
+ScaleHi     =  100
+ScaleLo     = -100
+
+var label  Infobox      = na
+
+// Declare Functions
+
+f_truncdNum (Val, DecPl) => 
+    Fact = math.pow(10, DecPl)
+    int(Val * Fact) / Fact
+     // decimal truncation
+
+a(x) => 2 / (x + 1)
+     // exponentially weighted multiplier
+
+f_reverse_SMI (P, U, W, X, Y, Z) =>
+    V = 0.5
+    H = ta.highest(W)
+    L = ta.lowest(W)
+    D = ta.ema((P - V * (H + L)), X)[1]
+    E = ta.ema(((a(X)* (P - V * (H + L)))+(D -D*a(X))), Y)[1]
+    F = ta.ema(H - L , X)[1]
+    G = ta.ema(((a(X)*(H -L) +  F*(1 -a(X)))), Y)[1]
+    J = 100 * ((a(Y)* ((a(X)* (P - V * (H + L))) + (D - D*a(X)))) + (E * (1 -a(Y)))) / (V * (a(Y)*((a(X)*(H -L) +  F*(1 -a(X)))) + (G*(1 -a(Y)))))[1]
+    K = ta.ema((100 * ((a(Y)* ((a(X)* (P - V * (H + L))) + (D - D*a(X)))) + (E * (1 -a(Y)))) / (V * (a(Y)*((a(X)*(H -L) +  F*(1 -a(X)))) + (G*(1 -a(Y)))))), Z)[1]
+    rawReturn = (V*U*(a(Y)*a(X)*H -a(Y)*a(X)*L -a(Y)*F*a(X) +a(Y)*F -G*a(Y) + G) + 100*(a(Y)*a(X)*V*H +a(Y)*a(X)*V*L -a(Y)*D +a(Y)*D*a(X) +E*a(Y) -E)) / (100*a(Y)*a(X))
+    returnIfU = rawReturn > 0 ? rawReturn : 0 
+     // returns price where Stochastic Momentum Index is equal to input value "U"
+     // e.g. f_reverse_SMI (close, 0, 13, 25, 2, 12) 
+     // would return the next closing price which would make SMI = 0
+     // the user can infer from this that.....
+     // closing above this price will cause the Stochastic Momentum Index to cross above the mid line
+     // and closing below it will cause the Stochastic Momentum Index to cross below the mid line
+     // This may also be used to give the SMI eq price (the price which would make the SMI equal to its prior value)
+     // this is done by inputing the prior value of the SMI (SMI[1]) as the "U" value
+     // e.g. f_reverse_SMI (close, SMI[1], 13, 25, 2, 12) 
+     // The user can infer from this that..... 
+     // closing above this price will cause the Stochastic Momentum Index to increase
+     // and closing below it will cause the Stochastic Momentum Index to decrease
+     // has a Return filter to replace any values below zero with zero
+
+f_reverse_SMI_cross (P, W, X, Y, Z) =>
+    V = 0.5
+    H = ta.highest(W)
+    L = ta.lowest(W)
+    D = ta.ema((P - V * (H + L)), X)[1]
+    E = ta.ema(((a(X)* (P - V * (H + L)))+(D -D*a(X))), Y)[1]
+    F = ta.ema(H - L , X)[1]
+    G = ta.ema(((a(X)*(H -L) +  F*(1 -a(X)))), Y)[1]
+    J = 100 * ((a(Y)* ((a(X)* (P - V * (H + L))) + (D - D*a(X)))) + (E * (1 -a(Y)))) / (V * (a(Y)*((a(X)*(H -L) +  F*(1 -a(X)))) + (G*(1 -a(Y)))))[1]
+    K = ta.ema((100 * ((a(Y)* ((a(X)* (P - V * (H + L))) + (D - D*a(X)))) + (E * (1 -a(Y)))) / (V * (a(Y)*((a(X)*(H -L) +  F*(1 -a(X)))) + (G*(1 -a(Y)))))), Z)[1]
+    rawReturn = (a(Y)*(100*(a(Z)*(-a(X)*V*H -a(X)*V*L +D -D*a(X) -a(X) -E) +a(X)*V*H +a(X)*V*L -D +D*a(X) +E) +V*K*(a(X)*(-H*a(Z) +H +L*a(Z) -L +F*a(Z) -F) -F*a(Z) +F +G*a(Z) -G)) +100*(a(Z)*E-E) -V*K*G*a(Z) +V*K*G)/(100*a(Y)*a(X)*(-a(Z)+1))
+    returnIfU = rawReturn > 0 ? rawReturn : 0
+     // returns price where Stochastic Momentum Index is equal to the signal line
+     // the user can infer from this that.....
+     // closing above this price will cause the Stochastic Momentum Index to cross above the signal line
+     // and closing below it will cause the Stochastic Momentum Index to cross below the signal line
+     // has a Return filter to replace any values below zero with zero
+
+f_delta (P, X) => 
+    X - P > 0
+
+f_negVal (X, D) => 
+    X > 0 ? str.tostring(f_truncdNum (X, D)) : "Impossible" 
+
+text_eq (p, x, d) => 
+    p > x ? "Continues Rising Above (eq) : " + str.tostring(int(x*math.pow(10,d))/math.pow(10,d)) : "Continues Falling Below (Eq) :" + str.tostring(int(x*math.pow(10,d))/math.pow(10,d))
+
+f_crossText (P, X, T, D) => 
+    f_delta (P, X) ? "Cross Above " + T + " : " + f_negVal (X, D) + "\n" : "Cross Below " + T + " : " + f_negVal (X, D) + "\n" 
+
+
+// Calculations
+SMINumerator        = ta.ema(ta.ema(i_srcPrice - 0.5 * (ta.highest(i_SMI_len) + ta.lowest(i_SMI_len)), i_smth1), i_smth2)
+SMIDenominator      = 0.5 * ta.ema(ta.ema(ta.highest(i_SMI_len) - ta.lowest(i_SMI_len), i_smth1), i_smth2)
+SMI                 = 100 * SMINumerator / SMIDenominator
+SMI_eq              = f_reverse_SMI (i_srcPrice, SMI[1], i_SMI_len, i_smth1, i_smth2, i_sigLen)
+alrtHilineCross     = f_reverse_SMI (i_srcPrice, i_alrtHi, i_SMI_len, i_smth1, i_smth2, i_sigLen)
+zerolineCross       = f_reverse_SMI (i_srcPrice, 0, i_SMI_len, i_smth1, i_smth2, i_sigLen)
+alrtLolineCross     = f_reverse_SMI (i_srcPrice, i_alrtLo, i_SMI_len, i_smth1, i_smth2, i_sigLen)
+signalCross         = f_reverse_SMI_cross (i_srcPrice, i_SMI_len, i_smth1, i_smth2, i_sigLen)
+
+
+// Compute Info Label
+labelXLoc           = time_close + (i_boxOffSet * (time_close - time_close[1]))
+crossSignalText     = f_crossText(i_srcPrice, signalCross, "Signal Line", i_decimalP)
+SMIeq               = text_eq(i_srcPrice, SMI_eq, i_decimalP)
+crossZeroText       = f_crossText(i_srcPrice, zerolineCross, "Zero Line", i_decimalP)
+crossAlrtHiText     = f_crossText(i_srcPrice, alrtHilineCross, "Alert Hi", i_decimalP)
+crossAlrtLoText     = f_crossText(i_srcPrice, alrtLolineCross, "Alert Lo", i_decimalP)
+infoBoxText         = i_alrtInfo ? "SMI\n\n" + SMIeq + "\n\n" + crossAlrtHiText + "\n" + crossSignalText + "\n" + crossZeroText + "\n" + crossAlrtLoText : "SMI\n\n" + SMIeq + "\n\n" + crossSignalText + "\n" + crossZeroText
+
+
+// InfoBox Plot
+if i_infoBox
+    Infobox := label.new(labelXLoc, close, infoBoxText, xloc.bar_time, yloc.price, #000000ff, label.style_label_left, color.white)
+
+label.delete(Infobox[1])
+
+
+// SMI Plots & Fills
+p_alrtHiPlot    = plot(i_alrtLines ? alrtHilineCross : na, title = "High Alert Level", color = color.new(color.aqua, 50), linewidth = 1, style = plot.style_linebr)
+p_alrtLoPlot    = plot(i_alrtLines ? alrtLolineCross : na, title = "Low Alert Level", color = color.new(color.purple, 50), linewidth = 1, style = plot.style_linebr)
+p_SMI_eqPlot    = plot(SMI_eq, title = "SMI EQ Price", color = SMI_eq < i_srcPrice ? color.green : color.red, linewidth = 2, style = plot.style_linebr)
+p_smiPlot       = plot(signalCross, title = "Signal Line Cross", color = signalCross < i_srcPrice ? #0ebb23 : #FF0000, linewidth = 2, style = plot.style_linebr)
+p_MidLinePlot   = plot(zerolineCross, title = "Zero Line Cross", color = color.new(color.white, 0), linewidth = 1, style = plot.style_linebr)
+
+
+// --*************************-*************************-- //
+// --*************************-*************************-- //
+
+
+
+// --*************************-*************************-- //
+               // -- Strategy ENTRY/EXIT -- // 
+
+
+
+if (long_condition)
+    strategy.entry("Long Entry", strategy.long)
+    if strategy.position_size <= 0 // Less than as in both direction strat - Could be long before switching
+        if atsp
+            atr_stop = open  - atr_stp_dst
+            strategy.exit('ATR Fixed Short Stop', "Long Entry", stop=atr_stop)
+        if fstp
+            stop = open - (open * fper)
+            strategy.exit('Perc Fixed Long Stop Exit', "Long Entry", stop=stop)
+
+if (short_condition)
+    strategy.entry("Short Entry", strategy.short)
+    if strategy.position_size >= 0 // Greater than as in both direction strat - Could be long before switching
+        if atsp
+            atr_stop = open  + atr_stp_dst
+            strategy.exit('ATR Fixed Short Stop Exit', "Short Entry", stop=atr_stop)
+        if fstp
+            stop = open + (open * fper)
+            strategy.exit('Perc Fixed Short Stop Exit', "Short Entry", stop=stop)
+
+
+strategy.close_all(when = not can_trade and ses_cls)
+
+
+// --*************************-*************************-- //
+// --*************************-*************************-- //
+
+
+
+// --*************************-*************************-- //
+                      // -- PLOTS -- // 
+
+
+// Testing & Debug Plots
+//plot(can_trade ? 1 : 0, color=color.purple, linewidth=2)
+//plot(na(in_asa) ? 0 : 1, color=color.red)
+//plot(na(in_eur) ? 0 : 1, color=color.blue)
+//plot(na(in_usa) ? 0 : 1, color=color.green)
+
+
+
+
+// --*************************-*************************-- //
+// --*************************-*************************-- //
+// --*************************-*************************-- //
