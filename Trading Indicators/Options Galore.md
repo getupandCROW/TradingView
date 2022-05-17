@@ -1,0 +1,4 @@
+---
+chartType: Indicator
+---
+
