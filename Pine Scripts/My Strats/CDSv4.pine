@@ -83,6 +83,7 @@ i_alrtLines = input.bool(false, "Show Alert Lines", inline = "AlertLevelCheck", 
 i_alrtHi    = input.float(40, "Upper Alert Level",   minval = -100, maxval = 100, group = GP6)
 i_midLine   = input.int(0, "Midline", minval = -100, maxval = 100, group = GP6)
 i_alrtLo    = input.float(-40, "Lower Alert Level",   minval = -100, maxval = 100, group = GP6)
+i_alrtFill  = input.bool(true, "Show Alert Level Fills", group = GP6)
 i_decimalP  = input.int(2, "Prices Decimal Places", minval = 0, maxval = 10, group = GP6)
 i_infoBox   = input.bool(true, "Show Info Box", inline = "InfoBox", group = GP6)
 i_boxOffSet = input.int(5, "Info Box Offset", minval = 1, maxval = 50, inline = "InfoBox", group = GP6)
@@ -233,7 +234,7 @@ crossAlrtLoText     = f_crossText(i_srcPrice, alrtLolineCross, "Alert Lo", i_dec
 infoBoxText         = i_alrtInfo ? "SMI\n\n" + SMIeq + "\n\n" + crossAlrtHiText + "\n" + crossSignalText + "\n" + crossZeroText + "\n" + crossAlrtLoText : "SMI\n\n" + SMIeq + "\n\n" + crossSignalText + "\n" + crossZeroText
 
 
-// InfoBox Plot
+// InfoBox Label
 if i_infoBox
     Infobox := label.new(labelXLoc, close, infoBoxText, xloc.bar_time, yloc.price, #000000ff, label.style_label_left, color.white)
 
@@ -246,6 +247,24 @@ p_alrtLoPlot    = plot(i_alrtLines ? alrtLolineCross : na, title = "Low Alert Le
 p_SMI_eqPlot    = plot(SMI_eq, title = "SMI EQ Price", color = SMI_eq < i_srcPrice ? color.green : color.red, linewidth = 2, style = plot.style_linebr)
 p_smiPlot       = plot(signalCross, title = "Signal Line Cross", color = signalCross < i_srcPrice ? #0ebb23 : #FF0000, linewidth = 2, style = plot.style_linebr)
 p_MidLinePlot   = plot(zerolineCross, title = "Zero Line Cross", color = color.new(color.white, 0), linewidth = 1, style = plot.style_linebr)
+
+// Plot character if Source crosses Hi or Lo Alert Lines
+//price_X_hiAlert = plot(p_alrtHiPlot >= srcInput ? na : alrtHilineCross, title = "Price crossed above Hi Alert Line - char at bottom", style = plot.style_cross, location = location.bottom, size = size.small)
+//price_X_LoAlert = plot(p_alrtLoPlot <= srcInput ? na : alrtLolineCross, title = "Price crossed below Lo Alert Line - char at top", style = plot.style_cross, location = location.top, size = size.small)
+
+
+smaSrc = plot(ta.sma(srcInput, periodInput), title = "smaSrc Invisible Plot", color = color.new(color.orange, 100))
+//fillAlertHi = p_alrtHiPlot < smaSrc ? 40 : 100
+//fillAlertLo = p_alrtLoPlot  < smaSrc ? 40 : 100
+//fillAlertColorHi = color.new(color.red, fillAlertHi)
+//fillAlertColorLo = color.new(color.green, fillAlertLo)
+
+//fill(smaSrc, p_alrtHiPlot, color=fillAlertColorHi)
+//fill(smaSrc, p_alrtLoPlot, color=fillAlertColorLo)
+
+p1 = plot(open)
+p2 = plot(close)
+fill(p1, p2, color=color.new(color.green, 90))
 
 
 // --*************************-*************************-- //
