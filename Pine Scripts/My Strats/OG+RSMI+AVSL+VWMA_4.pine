@@ -141,11 +141,11 @@ label.delete ( Infobox[1] )
 ///////////////////////////////////////////////////////////////////////////////
 // SMI Plots & Fills
 
-p_alrtHiPlot    = plot ( i_alrtLines ? alrtHilineCross : na, "High Alert Level",                                    color.aqua, 1, plot.style_linebr, transp = 50 )
-p_alrtLoPlot    = plot ( i_alrtLines ? alrtLolineCross : na, "Low Alert Level",                                   color.purple, 1, plot.style_linebr, transp = 50 )
-p_SMI_eqPlot    = plot ( SMI_eq,                             "SMI EQ Price",      SMI_eq < i_srcPrice ? color.green: color.red, 2, plot.style_linebr, transp = 0)
-p_smiPlot       = plot ( signalCross,                        "Signal Line Cross", signalCross < i_srcPrice ? #0ebb23 : #FF0000, 2, plot.style_linebr, transp = 0)
-p_MidLinePlot   = plot ( zerolineCross,                      "Zero Line Cross",                                    color.white, 1, plot.style_linebr, transp = 0)
+p_alrtHiPlot    = plot ( i_alrtLines ? alrtHilineCross : na, "High Alert Level",                                    color.aqua, 1, plot.style_linebr,50)
+p_alrtLoPlot    = plot ( i_alrtLines ? alrtLolineCross : na, "Low Alert Level",                                   color.purple, 1, plot.style_linebr,50)
+p_SMI_eqPlot    = plot ( SMI_eq,                             "SMI EQ Price",      SMI_eq < i_srcPrice ? color.green: color.red, 2, plot.style_linebr,0)
+p_smiPlot       = plot ( signalCross,                        "Signal Line Cross", signalCross < i_srcPrice ? #0ebb23 : #FF0000, 2, plot.style_linebr,0)
+p_MidLinePlot   = plot ( zerolineCross,                      "Zero Line Cross",                                    color.white, 1, plot.style_linebr,0)
 
 ///////////////////////////////////////////////////////////////////////////////
 // End
@@ -189,23 +189,23 @@ PriceFun(VPC,VPR,VM,src) =>                                                     
     max_bars_back(PriceV, 5000)
     PriceV
     
-// Caluclations
+// Calculations
 
-VWmaS = vwma(srcS,lenS)                                                         // Fast volume weighted moving average
-VWmaF = vwma(srcF,lenF)                                                         // Slow volume weighted moving average
-AvgS = sma(srcS,lenS)                                                           // Slow Volume average
-AvgF = sma(srcF,lenF)                                                           // Fast Volume average
-VPC = VWmaS - AvgS                                                              // Volume-Price Confirmation/Contradication VPC+/-
-VPR = VWmaF/AvgF                                                                // Volume-Price Ratio
-VM = sma(volume,lenF)/sma(volume,lenS)                                          // Volume Multipler
-VPCI=VPC*VPR*VM                                                                 // Volume-Price Confiramtion indicator
+VWmaS   = vwma(srcS,lenS)                                                         // Fast volume weighted moving average
+VWmaF   = vwma(srcF,lenF)                                                         // Slow volume weighted moving average
+AvgS    = sma(srcS,lenS)                                                           // Slow Volume average
+AvgF    = sma(srcF,lenF)                                                           // Fast Volume average
+VPC     = VWmaS - AvgS                                                              // Volume-Price Confirmation/Contradication VPC+/-
+VPR     = VWmaF/AvgF                                                                // Volume-Price Ratio
+VM      = sma(volume,lenF)/sma(volume,lenS)                                          // Volume Multipler
+VPCI    = VPC*VPR*VM                                                                 // Volume-Price Confiramtion indicator
 
-DeV = mult*VPCI*VM                                                              // Deviation
-AVSL = sma(low - PriceFun(VPC,VPR,VM,low) + DeV , lenS)                         
+DeV     = mult*VPCI*VM                                                              // Deviation
+AVSL    = sma(low - PriceFun(VPC,VPR,VM,low) + DeV , lenS)                         
 
 // Plots
 
-plot(AVSL, title="AWSL", color = color.white, transp=0, linewidth=1, style=plot.style_cross, offset=offset)
+plot(AVSL, title="AWSL", color = color.white, 0, linewidth=1, style=plot.style_cross, offset=offset)
 
 
 
