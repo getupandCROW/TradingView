@@ -29,9 +29,13 @@ indicator(title="Strength of Movement [andCROW] v3", shorttitle="SoM_andCROW_v3"
 var grp1 = "Introductory Parameters"
 srcInput = input.source(close, "Price Source",  inline = "21", group = grp1)
 //plot(srcInput, "Price", color.new(color.purple, 70), 6)
+
+
 // --************************--*************************-- //
             // -- Time Frame || Input Selection -- // 
 // --************************--*************************-- //
+
+
 // Time Frame Window
 //tfInput = input.timeframe("D", "Timeframe")
 //ma = ta.sma(close, 20)
@@ -43,6 +47,8 @@ srcInput = input.source(close, "Price Source",  inline = "21", group = grp1)
 //timeAndDateInput = input.time(timestamp("1 Aug 2021 00:00 +0300"), "Date and time")
 //barIsLater = time > timeAndDateInput
 //plotchar(barIsLater, "barIsLater", "🠆", location.top, size = size.tiny)
+
+
 // --************************--*************************-- //
     // -- Currency Symbol || Input Selection -- // 
 // --************************--*************************-- //
@@ -67,7 +73,7 @@ string daysInput = input.string("1234567", tooltip = "1 = Sunday, 7 = Saturday",
 sessionString = sessionInput + ":" + daysInput
 inSession = not na(time(timeframe.period, sessionString))
 
-bgcolor(inSession ? color.silver : na)
+// bgcolor(inSession ? color.silver : na)
 
 // --************************--*************************-- //
         // -- Example Indicator and Study Plots -- // 
@@ -75,20 +81,15 @@ bgcolor(inSession ? color.silver : na)
 
 // Shading BG by Day of Week
 
-BASE_COLOR = color.navy
-bgColor = dayofweek == dayofweek.monday    ? color.new(BASE_COLOR, 50) :
-        dayofweek == dayofweek.tuesday   ? color.new(BASE_COLOR, 60) :
-        dayofweek == dayofweek.wednesday ? color.new(BASE_COLOR, 70) :
-        dayofweek == dayofweek.thursday  ? color.new(BASE_COLOR, 80) :
-        dayofweek == dayofweek.friday    ? color.new(BASE_COLOR, 90) :
-        color.new(color.blue, 80)
+// BASE_COLOR = color.navy
+// bgColor = dayofweek == dayofweek.monday    ? color.new(BASE_COLOR, 50) : dayofweek == dayofweek.tuesday   ? color.new(BASE_COLOR, 60) : dayofweek == dayofweek.wednesday ? color.new(BASE_COLOR, 70) : dayofweek == dayofweek.thursday  ? color.new(BASE_COLOR, 80) : dayofweek == dayofweek.friday    ? color.new(BASE_COLOR, 90) : color.new(color.blue, 80)
 
-bgcolor(bgColor)
+// bgcolor(bgColor)
 
 // arrows plotchar example
-//data = close >= open
-//plotchar(data, char='↓', color=lime)
-//plotchar(data, char='↑', location=location.belowbar, color=red)
+// data = close >= open
+// plotchar(data, char='↓', color=lime)
+// plotchar(data, char='↑', location=location.belowbar, color=red)
 
 
 // --************************--*************************-- //
@@ -103,7 +104,7 @@ ma2srcInput   = input(close, "MA 2 Source   ",  inline = "21", group = grp
 ma2LengthInput   = input(close, "MA 2 Length",        inline = "21", group = grp3)
 long2srcInput = input(close, "Signal 2 Source", inline = "22", group = grp3)
 long2LengthInput = input(close, "Signal 2 Length",        inline = "22", group = grp3)
-showVWMAInput   = input.bool(true, "Show VWMA",   inline = "02")
+showVWMAInput   = input.bool(true, "Show VWMA",   inline = "22")
 
 
 plot(ta.vwma(close, 10))
