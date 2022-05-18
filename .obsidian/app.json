@@ -1,5 +1,9 @@
 {
   "legacyEditor": false,
   "livePreview": true,
-  "alwaysUpdateLinks": true
+  "alwaysUpdateLinks": true,
+  "readableLineLength": true,
+  "showLineNumber": true,
+  "lineWrap": true,
+  "communityThemeSortOrder": "release"
 }

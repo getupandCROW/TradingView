@@ -4,24 +4,12 @@
     "type": "split",
     "children": [
       {
-        "id": "15b63c53acd85d27",
-        "type": "leaf",
-        "state": {
-          "type": "markdown",
-          "state": {
-            "file": "Pine Scripts/TXT Notes/888 BOT info.md",
-            "mode": "preview",
-            "source": true
-          }
-        }
-      },
-      {
         "id": "1642cc5de2dae3ee",
         "type": "leaf",
         "state": {
           "type": "markdown",
           "state": {
-            "file": "@ TradingView.md",
+            "file": "I--CompoundConditions.md",
             "mode": "source",
             "source": false
           }
@@ -52,7 +40,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "movement",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -65,8 +53,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 207,
-    "collapsed": true
+    "width": 309
   },
   "right": {
     "id": "4cb8383e059d6078",
@@ -82,7 +69,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "@ TradingView.md",
+                "file": "I--CompoundConditions.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,8 +89,15 @@
   },
   "active": "1642cc5de2dae3ee",
   "lastOpenFiles": [
+    "I--CompoundConditions.md",
     "@ TradingView.md",
-    "Pine Scripts/TXT Notes/888 BOT info.md",
-    "Trading Indicators/MACD-KDJ-RSI-WR-DMI Composite Trading System.md"
+    "Trading Indicators/Ease of Movement (EOM).md",
+    "Trading Indicators/Directional Movement (DMI).md",
+    "Trading Indicators/Average True Range (ATR).md",
+    "TV Functions.md",
+    "TradingView Alarms.md",
+    "Trading Indicators/Options Galore.md",
+    "Trading Indicators/Volume Weighted Average Price (VWAP).md",
+    "Pine Scripts/My Strats/CndtnDvlpr_SprStd_v03.md"
   ]
 }

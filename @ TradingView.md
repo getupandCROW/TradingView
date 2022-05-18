@@ -390,13 +390,13 @@ Result of [input](https://www.tradingview.com/pine-script-reference/v5/#fun_inpu
 
 [input.bool](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}bool)[input.color](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}color)[input.int](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}int)[input.float](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}float)[input.string](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}string)[input.symbol](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}symbol)[input.timeframe](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}timeframe)[input.text_area](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}text_area)[input.session](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}session)[input.source](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}source)[input.time](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}time)
 
-### input.bool
+#### input.bool
 
 Adds an input to the Inputs tab of your script's Settings, which allows you to provide configuration options to script users. This function adds a checkmark to the script's inputs.
 
 input.bool(defval, title, tooltip, inline, group, confirm) → input bool
 
-#### Example
+##### Example
 
 ```js
 //@version=5
@@ -431,7 +431,7 @@ See also
 
 [input.int](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}int)[input.float](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}float)[input.string](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}string)[input.text_area](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}text_area)[input.symbol](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}symbol)[input.timeframe](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}timeframe)[input.session](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}session)[input.source](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}source)[input.color](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}color)[input.time](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}time)[input](https://www.tradingview.com/pine-script-reference/v5/#fun_input)
 
-### input.color
+#### input.color
 
 Adds an input to the Inputs tab of your script's Settings, which allows you to provide configuration options to script users. This function adds a color picker that allows the user to select a color and transparency, either from a palette or a hex value.
 
@@ -472,7 +472,7 @@ Result of [input.color](https://www.tradingview.com/pine-script-reference/v5/#fu
 
 [input.bool](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}bool)[input.int](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}int)[input.float](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}float)[input.string](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}string)[input.text_area](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}text_area)[input.symbol](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}symbol)[input.timeframe](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}timeframe)[input.session](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}session)[input.source](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}source)[input.time](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}time)[input](https://www.tradingview.com/pine-script-reference/v5/#fun_input)
 
-### input.float
+#### input.float
 
 Adds an input to the Inputs tab of your script's Settings, which allows you to provide configuration options to script users. This function adds a field for a float input to the script's inputs.
 
@@ -526,7 +526,7 @@ Result of [input.float](https://www.tradingview.com/pine-script-reference/v5/#fu
 
 [input.bool](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}bool)[input.int](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}int)[input.string](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}string)[input.text_area](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}text_area)[input.symbol](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}symbol)[input.timeframe](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}timeframe)[input.session](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}session)[input.source](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}source)[input.color](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}color)[input.time](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}time)[input](https://www.tradingview.com/pine-script-reference/v5/#fun_input)
 
-### input.int
+#### input.int
 
 Adds an input to the Inputs tab of your script's Settings, which allows you to provide configuration options to script users. This function adds a field for an integer input to the script's inputs.
 
@@ -580,7 +580,7 @@ Result of [input.int](https://www.tradingview.com/pine-script-reference/v5/#fun_
 
 [input.bool](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}bool)[input.float](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}float)[input.string](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}string)[input.text_area](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}text_area)[input.symbol](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}symbol)[input.timeframe](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}timeframe)[input.session](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}session)[input.source](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}source)[input.color](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}color)[input.time](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}time)[input](https://www.tradingview.com/pine-script-reference/v5/#fun_input)
 
-### input.price
+#### input.price
 
 Adds a price input to the script's "Settings/Inputs" tab. Using `confirm = true` activates the interactive input mode where a price is selected by clicking on the chart.
 
@@ -624,7 +624,7 @@ See also
 
 [input.bool](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}bool)[input.int](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}int)[input.float](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}float)[input.string](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}string)[input.text_area](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}text_area)[input.symbol](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}symbol)[input.resolution](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}resolution)[input.session](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}session)[input.source](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}source)[input.color](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}color)[input](https://www.tradingview.com/pine-script-reference/v5/#fun_input)
 
-### input.session
+#### input.session
 
 Adds an input to the Inputs tab of your script's Settings, which allows you to provide configuration options to script users. This function adds two dropdowns that allow the user to specify the beginning and the end of a session using the session selector and returns the result as a string.
 
@@ -668,7 +668,7 @@ See also
 
 [input.bool](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}bool)[input.int](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}int)[input.float](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}float)[input.string](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}string)[input.text_area](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}text_area)[input.symbol](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}symbol)[input.timeframe](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}timeframe)[input.source](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}source)[input.color](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}color)[input.time](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}time)[input](https://www.tradingview.com/pine-script-reference/v5/#fun_input)
 
-### input.source
+#### input.source
 
 Adds an input to the Inputs tab of your script's Settings, which allows you to provide configuration options to script users. This function adds a dropdown that allows the user to select a source for the calculation, e.g. [close](https://www.tradingview.com/pine-script-reference/v5/#var_close), [hl2](https://www.tradingview.com/pine-script-reference/v5/#var_hl2), etc. If the script includes only one input.source() call, the user can also select an output from another indicator on their chart as the source.
 
@@ -707,7 +707,7 @@ See also
 
 [input.bool](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}bool)[input.int](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}int)[input.float](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}float)[input.string](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}string)[input.text_area](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}text_area)[input.symbol](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}symbol)[input.timeframe](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}timeframe)[input.session](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}session)[input.color](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}color)[input.time](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}time)[input](https://www.tradingview.com/pine-script-reference/v5/#fun_input)
 
-### input.string
+#### input.string
 
 Adds an input to the Inputs tab of your script's Settings, which allows you to provide configuration options to script users. This function adds a field for a string input to the script's inputs.
 
@@ -751,7 +751,7 @@ See also
 
 [input.text_area](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}text_area)[input.bool](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}bool)[input.int](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}int)[input.float](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}float)[input.symbol](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}symbol)[input.timeframe](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}timeframe)[input.session](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}session)[input.source](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}source)[input.color](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}color)[input.time](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}time)[input](https://www.tradingview.com/pine-script-reference/v5/#fun_input)
 
-### input.symbol
+#### input.symbol
 
 Adds an input to the Inputs tab of your script's Settings, which allows you to provide configuration options to script users. This function adds a field that allows the user to select a specific symbol using the symbol search and returns that symbol, paired with its exchange prefix, as a string.
 
@@ -793,7 +793,7 @@ See also
 
 [input.bool](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}bool)[input.int](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}int)[input.float](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}float)[input.string](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}string)[input.text_area](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}text_area)[input.timeframe](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}timeframe)[input.session](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}session)[input.source](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}source)[input.color](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}color)[input.time](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}time)[input](https://www.tradingview.com/pine-script-reference/v5/#fun_input)
 
-### input.text_area
+#### input.text_area
 
 Adds an input to the Inputs tab of your script's Settings, which allows you to provide configuration options to script users. This function adds a field for a multiline text input.
 
@@ -832,7 +832,7 @@ See also
 
 [input.string](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}string)[input.bool](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}bool)[input.int](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}int)[input.float](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}float)[input.symbol](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}symbol)[input.timeframe](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}timeframe)[input.session](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}session)[input.source](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}source)[input.color](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}color)[input.time](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}time)[input](https://www.tradingview.com/pine-script-reference/v5/#fun_input)
 
-### input.time
+#### input.time
 
 Adds a time input to the script's "Settings/Inputs" tab. This function adds two input widgets on the same line: one for the date and one for the time. The function returns a date/time value in UNIX format. Using `confirm = true` activates the interactive input mode where a point in time is selected by clicking on the chart.
 
@@ -874,7 +874,7 @@ See also
 
 [input.bool](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}bool)[input.int](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}int)[input.float](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}float)[input.string](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}string)[input.text_area](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}text_area)[input.symbol](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}symbol)[input.timeframe](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}timeframe)[input.session](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}session)[input.source](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}source)[input.color](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}color)[input](https://www.tradingview.com/pine-script-reference/v5/#fun_input)
 
-### input.timeframe
+#### input.timeframe
 
 Adds an input to the Inputs tab of your script's Settings, which allows you to provide configuration options to script users. This function adds a dropdown that allows the user to select a specific timeframe via the timeframe selector and returns it as a string. The selector includes the custom timeframes a user may have added using the chart's Timeframe dropdown.
 
@@ -918,7 +918,7 @@ See also
 
 [input.bool](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}bool)[input.int](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}int)[input.float](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}float)[input.string](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}string)[input.text_area](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}text_area)[input.symbol](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}symbol)[input.session](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}session)[input.source](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}source)[input.color](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}color)[input.time](https://www.tradingview.com/pine-script-reference/v5/#fun_input{dot}time)[input](https://www.tradingview.com/pine-script-reference/v5/#fun_input)
 
-### int
+#### int
 
 Casts na or truncates float value to int
 
@@ -952,7 +952,7 @@ See also
 
 [float](https://www.tradingview.com/pine-script-reference/v5/#fun_float)[int](https://www.tradingview.com/pine-script-reference/v5/#fun_int)[bool](https://www.tradingview.com/pine-script-reference/v5/#fun_bool)[color](https://www.tradingview.com/pine-script-reference/v5/#fun_color)[string](https://www.tradingview.com/pine-script-reference/v5/#fun_string)[line](https://www.tradingview.com/pine-script-reference/v5/#fun_line)
 
-### label.copy
+#### label.copy
 
 Clones the label object.
 
@@ -989,7 +989,7 @@ See also
 
 [label.new](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}new)[label.delete](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}delete)
 
-### label.delete
+#### label.delete
 
 Deletes the specified label object. If it has already been deleted, does nothing.
 
@@ -1003,7 +1003,7 @@ See also
 
 [label.new](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}new)
 
-### label.get_text
+#### label.get_text
 
 Returns the text of this label object.
 
@@ -1031,7 +1031,7 @@ See also
 
 [label.new](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}new)
 
-### label.get_x
+#### label.get_x
 
 Returns UNIX time or bar index (depending on the last xloc value set) of this label's position.
 
@@ -1059,7 +1059,7 @@ See also
 
 [label.new](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}new)
 
-### label.get_y
+#### label.get_y
 
 Returns price of this label's position.
 
@@ -1077,7 +1077,7 @@ See also
 
 [label.new](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}new)
 
-### label.new
+#### label.new
 
 Creates new label object.
 
@@ -1127,7 +1127,7 @@ See also
 
 [label.delete](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}delete)[label.set_x](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}set_x)[label.set_y](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}set_y)[label.set_xy](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}set_xy)[label.set_xloc](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}set_xloc)[label.set_yloc](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}set_yloc)[label.set_color](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}set_color)[label.set_textcolor](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}set_textcolor)[label.set_style](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}set_style)[label.set_size](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}set_size)[label.set_textalign](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}set_textalign)[label.set_tooltip](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}set_tooltip)
 
-### label.set_color
+#### label.set_color
 
 Sets label border and arrow color.
 
@@ -1143,7 +1143,7 @@ See also
 
 [label.new](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}new)
 
-### label.set_size
+#### label.set_size
 
 Sets arrow and text size of the specified label object.
 
@@ -1159,7 +1159,7 @@ See also
 
 [size.auto](https://www.tradingview.com/pine-script-reference/v5/#var_size{dot}auto)[size.tiny](https://www.tradingview.com/pine-script-reference/v5/#var_size{dot}tiny)[size.small](https://www.tradingview.com/pine-script-reference/v5/#var_size{dot}small)[size.normal](https://www.tradingview.com/pine-script-reference/v5/#var_size{dot}normal)[size.large](https://www.tradingview.com/pine-script-reference/v5/#var_size{dot}large)[size.huge](https://www.tradingview.com/pine-script-reference/v5/#var_size{dot}huge)[label.new](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}new)
 
-### label.set_style
+#### label.set_style
 
 Sets label style.
 
@@ -1175,7 +1175,7 @@ See also
 
 [label.new](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}new)
 
-### label.set_text
+#### label.set_text
 
 Sets label text
 
@@ -1191,7 +1191,7 @@ See also
 
 [label.new](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}new)
 
-### label.set_textalign
+#### label.set_textalign
 
 Sets the alignment for the label text.
 
@@ -1207,7 +1207,7 @@ See also
 
 [text.align_left](https://www.tradingview.com/pine-script-reference/v5/#var_text{dot}align_left)[text.align_center](https://www.tradingview.com/pine-script-reference/v5/#var_text{dot}align_center)[text.align_right](https://www.tradingview.com/pine-script-reference/v5/#var_text{dot}align_right)[label.new](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}new)
 
-### label.set_textcolor
+#### label.set_textcolor
 
 Sets color of the label text.
 
@@ -1223,7 +1223,7 @@ See also
 
 [label.new](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}new)
 
-### label.set_tooltip
+#### label.set_tooltip
 
 Sets the tooltip text.
 
@@ -1239,7 +1239,7 @@ See also
 
 [label.new](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}new)
 
-### label.set_x
+#### label.set_x
 
 Sets bar index or bar time (depending on the xloc) of the label position.
 
@@ -1255,7 +1255,7 @@ See also
 
 [label.new](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}new)
 
-### label.set_xloc
+#### label.set_xloc
 
 Sets x-location and new bar index/time value.
 
@@ -1273,7 +1273,7 @@ See also
 
 [xloc.bar_index](https://www.tradingview.com/pine-script-reference/v5/#var_xloc{dot}bar_index)[xloc.bar_time](https://www.tradingview.com/pine-script-reference/v5/#var_xloc{dot}bar_time)[label.new](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}new)
 
-### label.set_xy
+#### label.set_xy
 
 Sets bar index/time and price of the label position.
 
@@ -1291,7 +1291,7 @@ See also
 
 [label.new](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}new)
 
-### label.set_y
+#### label.set_y
 
 Sets price of the label position
 
@@ -1307,7 +1307,7 @@ See also
 
 [label.new](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}new)
 
-### label.set_yloc
+#### label.set_yloc
 
 Sets new y-location calculation algorithm.
 
@@ -1323,7 +1323,6 @@ See also
 
 [yloc.price](https://www.tradingview.com/pine-script-reference/v5/#var_yloc{dot}price)[yloc.abovebar](https://www.tradingview.com/pine-script-reference/v5/#var_yloc{dot}abovebar)[yloc.belowbar](https://www.tradingview.com/pine-script-reference/v5/#var_yloc{dot}belowbar)[label.new](https://www.tradingview.com/pine-script-reference/v5/#fun_label{dot}new)
 ## Keyboard Shortcuts #hotkeys 
-
 ### Chart
 
 ![Image from Gyazo](https://i.gyazo.com/579c309f9a3dd7c57f42b888dfe70179.png)
