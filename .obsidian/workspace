@@ -4,14 +4,12 @@
     "type": "split",
     "children": [
       {
-        "id": "1642cc5de2dae3ee",
+        "id": "ad5e9be6234729b7",
         "type": "leaf",
         "state": {
-          "type": "markdown",
+          "type": "pdf",
           "state": {
-            "file": "I--CompoundConditions.md",
-            "mode": "source",
-            "source": false
+            "file": "PDFs/No-Nonsense-FOREX-Flow-Charts.pdf"
           }
         }
       }
@@ -69,7 +67,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "I--CompoundConditions.md",
+                "file": "PDFs/No-Nonsense-FOREX-Flow-Charts.pdf",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -87,17 +85,17 @@
     "width": 300,
     "collapsed": true
   },
-  "active": "1642cc5de2dae3ee",
+  "active": "ad5e9be6234729b7",
   "lastOpenFiles": [
-    "I--CompoundConditions.md",
+    "PDFs/No-Nonsense-FOREX-Flow-Charts.pdf",
+    "TradingView Pinescript Reference/alertcondition().md",
+    "TradingView Pinescript Reference/bgcolor().md",
+    "TradingView Pinescript Reference/TV Functions 1.md",
     "@ TradingView.md",
-    "Trading Indicators/Ease of Movement (EOM).md",
-    "Trading Indicators/Directional Movement (DMI).md",
-    "Trading Indicators/Average True Range (ATR).md",
-    "TV Functions.md",
-    "TradingView Alarms.md",
-    "Trading Indicators/Options Galore.md",
-    "Trading Indicators/Volume Weighted Average Price (VWAP).md",
-    "Pine Scripts/My Strats/CndtnDvlpr_SprStd_v03.md"
+    "Risk vs Reward.md",
+    "TradingView Pinescript Reference/strategy.exit.md",
+    "TradingView Pinescript Reference/TV Functions.md",
+    "Trading Indicators/I--CompoundConditions.md",
+    "TradingView Pinescript Reference/strategy.entry.md"
   ]
 }

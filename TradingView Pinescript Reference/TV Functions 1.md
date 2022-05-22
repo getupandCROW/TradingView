@@ -1,3 +1,5 @@
+[[TradingView]]
+
 ### import()
 
 Used to load an external [library](https://www.tradingview.com/pine-script-reference/v5/#fun_library) into a script and bind its functions to a namespace. The importing script can be an indicator, a strategy, or another library. A library must be published (privately or publicly) before it can be imported.
