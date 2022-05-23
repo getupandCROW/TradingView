@@ -1,8 +1,9 @@
 {
-  "snippets_file": "tv : [[TradingView]]$end$\ntrx : [[Tron (TRX)|TRX]]$end$\n",
+  "snippets_file": "tv : [[TradingView]]$end$\ntrx : [[Tron (TRX)|TRX]]$end$\n2col : === start-multi-column: ExampleRegion3$nl$\n$nl$\n# Column 1$nl$\n$end$$nl$\n=== end-column ===$nl$\n$nl$\n# Column 2$nl$\n$nl$\n=== end-multi-column$nl$\n$nl$",
   "snippets": [
     "tv : [[TradingView]]$end$",
-    "trx : [[Tron (TRX)|TRX]]$end$"
+    "trx : [[Tron (TRX)|TRX]]$end$",
+    "2col : === start-multi-column: ExampleRegion3$nl$\n$nl$\n# Column 1$nl$\n$end$$nl$\n=== end-column ===$nl$\n$nl$\n# Column 2$nl$\n$nl$\n=== end-multi-column$nl$\n$nl$"
   ],
   "endSymbol": "$end$",
   "newlineSymbol": "$nl$",

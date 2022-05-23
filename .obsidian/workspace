@@ -9,12 +9,27 @@
         "state": {
           "type": "markdown",
           "state": {
-            "file": "Pine Scripts/My Strats/CndtnDvlpr_SprStd_v03.md",
+            "file": "Pine Scripts/My Strats/Indicator Testing Script.md",
             "mode": "source",
             "backlinks": true,
             "source": false
           }
-        }
+        },
+        "group": "672aa0d9ba929f00"
+      },
+      {
+        "id": "bbb155c49b509854",
+        "type": "leaf",
+        "state": {
+          "type": "markdown",
+          "state": {
+            "file": "Pine Scripts/My Strats/Indicator Testing Script.md",
+            "mode": "preview",
+            "backlinks": true,
+            "source": false
+          }
+        },
+        "group": "672aa0d9ba929f00"
       }
     ],
     "direction": "vertical"
@@ -54,7 +69,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 309
+    "width": 309,
+    "collapsed": true
   },
   "right": {
     "id": "4cb8383e059d6078",
@@ -70,7 +86,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Pine Scripts/My Strats/CndtnDvlpr_SprStd_v03.md",
+                "file": "Pine Scripts/My Strats/Indicator Testing Script.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -90,6 +106,8 @@
   },
   "active": "ad5e9be6234729b7",
   "lastOpenFiles": [
+    "Pine Scripts/My Strats/Indicator Testing Script.md",
+    "Templates/Untitled.md",
     "Pine Scripts/My Strats/CndtnDvlpr_SprStd_v03.md",
     "3Commas Exports/export_2022-05-23_03-05/export_2022-05-23_03-05.csv",
     "2022-05-21.md",
@@ -97,8 +115,6 @@
     "Templates/Daily Notes/Daily Note Template.md",
     "Templates/Daily Notes/Monthly Note Template.md",
     "Templates/Daily Notes/Weekly Note Template.md",
-    "PDFs/No-Nonsense-FOREX-Flow-Charts.pdf",
-    "TradingView Pinescript Reference/alertcondition().md",
-    "TradingView Pinescript Reference/bgcolor().md"
+    "PDFs/No-Nonsense-FOREX-Flow-Charts.pdf"
   ]
 }
