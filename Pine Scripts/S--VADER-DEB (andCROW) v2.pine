@@ -1,12 +1,8 @@
 // This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
-// © RedKTrader
 
 //@version=5
-strategy(title = 'Dual VADER with Energy Bars [VADER-DEB]', shorttitle = 'VADER-DEB (andCROW)', precision=0, overlay = false, pyramiding = 0, default_qty_type = strategy.percent_of_equity, default_qty_value = 50, initial_capital = 400)
+strategy(title = 'Dual VADER with Energy Bars [VADER-DEB] v3', shorttitle = 'VADERDEBandCROW_3', precision=0, overlay = false, pyramiding = 0, default_qty_type = strategy.percent_of_equity, default_qty_value = 50, initial_capital = 400)
 
-// This version is the same as VADER v3.0 with enhanced visuals, using Energy Bars instead of the positive/energy lines 
-// Sentiment plot changed from histogram to area and is exposed by default (hence Dual w/ Energy Bars -- DEB)
-// No change in core calculations from VADER v3.0  -- and that's why i'll just call it VADER v4.0
 
 // ***********************************************************************************************************
 // Choose volume calculation method.. Relative vs full. 
@@ -76,12 +72,12 @@ vola    =
   v_calc == 'Relative' ? f_RelVol(volume, vlookbk) : 
   volume
 
-R       = (ta.highest(2) - ta.lowest(2)) / 2                    // R is the 2-bar average bar range - this method accomodates bar gaps
-sr      = ta.change(price) / R                                  // calc ratio of change to R
-rsr     = math.max(math.min(sr, 1), -1)                         // ensure ratio is restricted to +1/-1 in case of big moves
-c       = fixnan(rsr * vola)                                    // add volume accel -- fixnan adresses cases where no price change between bars
+R       = (ta.highest(2) - ta.lowest(2)) / 2  // R is the 2-bar average bar range - this method accomodates bar gaps
+sr      = ta.change(price) / R                // calc ratio of change to R
+rsr     = math.max(math.min(sr, 1), -1)       // ensure ratio is restricted to +1/-1 in case of big moves
+c       = fixnan(rsr * vola)                  // add volume accel -- fixnan adresses cases where no price change between bars
 
-c_plus  = math.max(c, 0)                                        // calc directional vol-accel energy
+c_plus  = math.max(c, 0)                      // calc directional vol-accel energy
 c_minus = -math.min(c, 0)
 
 // plot(c_plus)
@@ -122,7 +118,6 @@ up      = anp_s >= 0
 s_up    = V_senti >= 0 
 
 hline(0, 'Zero Line', c_zero, hline.style_solid)
-
 
 // =============================================================================
 // v4.0 --- Sentiment will be represented as a 4-color area graph
@@ -173,13 +168,17 @@ plot(anp_s, 'Signal', up ? c_up : c_dn, 4)
 
 
 // ===========================================================================================================
-//      v2.0 adding alerts 
+//      Signal Crossing '0' Alerts
 // ===========================================================================================================
 
 
 Alert_up    = ta.crossover(anp_s,0)
 Alert_dn    = ta.crossunder(anp_s,0)
 Alert_swing = ta.cross(anp_s,0)
+
+//plotchar(ta.rising(close, 5), "`plotchar()`", "▲", location.belowbar, color.lime, size = size.tiny)
+//plotchar(Alert_up, "^", "", location.top)
+//plotchar(Alert_dn, "v", "", location.bottom, size = size.tiny)
 
 // "." in alert title for the alerts to show in the right order up/down/swing 
 // alertcondition(Alert_up,    ".   VADER Crossing 0 Up",      "VADER Up - Buying Energy Detected!")
@@ -188,16 +187,27 @@ Alert_swing = ta.cross(anp_s,0)
 
 
 // ===========================================================================================================
-//      v3.0 more alerts for VADER crossing Sentiment
+//      Alerts for VADER crossing Sentiment
 // ===========================================================================================================
 
 
 v_speedup = ta.crossover(anp_s, V_senti)
 v_slowdn  = ta.crossunder(anp_s, V_senti)
-// alertcondition(v_speedup,   "*  VADER Speeding Up",      "VADER Speeding Up!")
-// alertcondition(v_slowdn,    "** VADER Slowing Down",    "VADER Slowing Down!")
+
+plotshape(series = v_speedup, title =  "Speed Up-Signal X^ Sentiment", style = shape.triangleup, location = location.bottom, color = color.new(color.lime, 20), size = size.small)
+plotshape(series = v_slowdn, title = "Slow Dn-Signal Xv Sentiment", style = shape.triangledown, location = location.top, color = color.new(color.orange, 20), size = size.small)
 
 
+// ===========================================================================================================
+//      Alerts for Signal crossing VADER
+// ===========================================================================================================
+
+// Exit for LONG at the top
+signalXOverVADER = ta.crossover(anp_s, anp)
+signalXUnderVADER  = ta.crossunder(anp_s, anp)
+
+plotshape(series = signalXUnderVADER, title =  "Signal Xv VADER", style = shape.flag, location = location.bottom, color = color.new(color.blue, 10), size = size.normal)
+plotshape(series = signalXOverVADER, title = "EXIT LONG - Signal X^ VADER", style = shape.flag, location = location.top, color = color.new(color.fuchsia, 10), size = size.normal)
 // ===========================================================================================================
 //      ATR Take Profit Trail Stop
 // ===========================================================================================================
@@ -208,16 +218,20 @@ TS = ta.cum(1) < 16 ? close : close > ta.highest(high - Mult * ta.atr(Atr), Hhv)
 
 Color = close > TS ? color.green : close < TS ? color.red : color.black
 barcolor(Barcolor ? Color : na)
-plot(TS, color = Color, linewidth = 3, title = "ATR Trailing Stoploss")
+//plot(TS, color = Color, linewidth = 2, title = "ATR Trailing Stoploss")
 
 takeProfit = ta.crossover(close, TS)
 stopLoss = ta.crossunder(close, TS)
 
+//plotshape(series = stopLoss, title =  "Price Xv Stop Loss ATR Trail Stop", style = shape.xcross, location = location.bottom, color = color.new(color.orange, 50), size = size.normal)
+//plotshape(series = takeProfit, title = "Price X^ Take Profit ATR Trail Stop", style = shape.diamond, location = location.top, color = color.new(color.orange, 50), size = size.normal)
 
+priceTrendUp = ta.ema(close[1], 100) <= close[1] ? 1 : 0
 
 buyLongSignal = (asp > adp) and (adp == bc) and (bc > V_senti) and (V_senti < 0) and (V_senti > anp_s) and (anp_s > anp)
 sellLongSignal = (adp == bc) and (bc > anp) and (anp > anp_s) and (anp_s > V_senti) and (V_senti > 0) and (V_senti > asp)
 
+bgcolor(buyLongSignal ? color.new(color.blue, 50) : sellLongSignal ? color.new(color.fuchsia, 50) : na)
 
 red_V_senti = not s_up and sflag_up     // Sentiment
 red_bc = bc < bo and not rising         // Energy Bars
@@ -233,15 +247,20 @@ bottomRising = anp > anp_s and V_senti
 atTop = grn_V_senti and grn_bc and grn_anp_s
 topFalling = anp < anp_s and V_senti
 
-// var int waitTillBottom = 
 
-if (atBottom)
+if (atBottom and not priceTrendUp)
     strategy.entry(id = "EL", direction = strategy.long, alert_message = "[{  \"action\": \"start_trailing\",  \"message_type\": \"bot\",  \"bot_id\": 9012671,  \"email_token\": \"75574b82-094c-4c8d-9843-058a372d5fac\",  \"delay_seconds\": 0}, {  \"message_type\": \"bot\",  \"bot_id\": 9012633,  \"email_token\": \"75574b82-094c-4c8d-9843-058a372d5fac\",  \"delay_seconds\": 30}]")
 
+// plotchar(v, "v", "", location.top, size = size.tiny)
 
-if (atTop)
+if (atTop and priceTrendUp)
     strategy.close(id = "EL", alert_message = "[{  \"action\": \"start_trailing\",  \"message_type\": \"bot\",  \"bot_id\": 9012633,  \"email_token\": \"75574b82-094c-4c8d-9843-058a372d5fac\",  \"delay_seconds\": 0}, {  \"message_type\": \"bot\",  \"bot_id\": 9012671,  \"email_token\": \"75574b82-094c-4c8d-9843-058a372d5fac\",  \"delay_seconds\": 30}]")
 
 
 
+//print(txt) => var _label = label.new(bar_index, na, txt, xloc.bar_index, yloc.price, color(na), label.style_none, color.gray, size.large, text.align_left), label.set_xy(_label, bar_index, ta.highest(10)[1]), label.set_text(_label, txt)
+//print(stringName)
 
+
+//longSignal = ta.rising(close, 2) and ta.rising(high, 2) and (na(volume) or ta.rising(volume, 2))
+//plotshape(longSignal, "Long", shape.arrowup, location.belowbar)
