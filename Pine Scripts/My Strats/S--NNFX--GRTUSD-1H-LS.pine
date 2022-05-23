@@ -1510,9 +1510,9 @@ if Hide_Overlay == true and ma_total2 == 0
 // Plots for Debugging
 //==============================================================================
 //
-//labelText =  "count close long" + tostring(Count_close_long )
-//stratLabel = label.new(x=bar_index, y=na, text=labelText, yloc = yloc.abovebar, color=color.black, textcolor = color.white, style = label.style_labeldown)
-//label.delete(stratLabel[1]) // Delete previous candle
+labelText =  "count close long" + tostring(Count_close_long )
+stratLabel = label.new(x=bar_index, y=na, text=labelText, yloc = yloc.abovebar, color=color.black, textcolor = color.white, style = label.style_labeldown)
+label.delete(stratLabel[1]) // Delete previous candle
 //
 //==============================================================================
 //       "The goal of a successful trader is to make the best trades"
