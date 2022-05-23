@@ -1,14 +1,14 @@
 {
-  "snippets_file": "TV : [[TradingView]]\ntrx : [[Tron (TRX)|TRX]]$end$\n",
+  "snippets_file": "tv : [[TradingView]]$end$\ntrx : [[Tron (TRX)|TRX]]$end$\n",
   "snippets": [
-    "TV : [[TradingView]]",
+    "tv : [[TradingView]]$end$",
     "trx : [[Tron (TRX)|TRX]]$end$"
   ],
   "endSymbol": "$end$",
   "newlineSymbol": "$nl$",
   "stopSymbol": "$tb$",
   "pasteSymbol": "$pst$",
-  "useTab": true,
+  "useTab": false,
   "useSpace": false,
   "wordDelimiters": "$()[]{}<>,.!?;:'\"\\/",
   "isWYSIWYG": true

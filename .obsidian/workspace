@@ -7,9 +7,12 @@
         "id": "ad5e9be6234729b7",
         "type": "leaf",
         "state": {
-          "type": "pdf",
+          "type": "markdown",
           "state": {
-            "file": "PDFs/No-Nonsense-FOREX-Flow-Charts.pdf"
+            "file": "Pine Scripts/My Strats/CndtnDvlpr_SprStd_v03.md",
+            "mode": "source",
+            "backlinks": true,
+            "source": false
           }
         }
       }
@@ -67,7 +70,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "PDFs/No-Nonsense-FOREX-Flow-Charts.pdf",
+                "file": "Pine Scripts/My Strats/CndtnDvlpr_SprStd_v03.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -87,15 +90,15 @@
   },
   "active": "ad5e9be6234729b7",
   "lastOpenFiles": [
+    "Pine Scripts/My Strats/CndtnDvlpr_SprStd_v03.md",
+    "3Commas Exports/export_2022-05-23_03-05/export_2022-05-23_03-05.csv",
+    "2022-05-21.md",
+    "! Daily Notes/Recent Notes/2022-05-22.md",
+    "Templates/Daily Notes/Daily Note Template.md",
+    "Templates/Daily Notes/Monthly Note Template.md",
+    "Templates/Daily Notes/Weekly Note Template.md",
     "PDFs/No-Nonsense-FOREX-Flow-Charts.pdf",
     "TradingView Pinescript Reference/alertcondition().md",
-    "TradingView Pinescript Reference/bgcolor().md",
-    "TradingView Pinescript Reference/TV Functions 1.md",
-    "@ TradingView.md",
-    "Risk vs Reward.md",
-    "TradingView Pinescript Reference/strategy.exit.md",
-    "TradingView Pinescript Reference/TV Functions.md",
-    "Trading Indicators/I--CompoundConditions.md",
-    "TradingView Pinescript Reference/strategy.entry.md"
+    "TradingView Pinescript Reference/bgcolor().md"
   ]
 }

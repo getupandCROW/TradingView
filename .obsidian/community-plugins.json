@@ -1,5 +1,15 @@
 [
   "cm-editor-syntax-highlight-obsidian",
   "templater-obsidian",
-  "text-snippets-obsidian"
+  "text-snippets-obsidian",
+  "periodic-notes",
+  "markdown-shortcuts",
+  "multi-column-markdown",
+  "extract-url",
+  "obsidian-smarter-md-hotkeys",
+  "obsidian-kanban",
+  "creases",
+  "highlightr-plugin",
+  "csv-obsidian",
+  "obsidian-pandoc"
 ]
