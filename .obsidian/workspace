@@ -4,25 +4,14 @@
     "type": "split",
     "children": [
       {
-        "id": "15b63c53acd85d27",
+        "id": "ad5e9be6234729b7",
         "type": "leaf",
         "state": {
           "type": "markdown",
           "state": {
-            "file": "Pine Scripts/TXT Notes/888 BOT info.md",
-            "mode": "preview",
-            "source": true
-          }
-        }
-      },
-      {
-        "id": "1642cc5de2dae3ee",
-        "type": "leaf",
-        "state": {
-          "type": "markdown",
-          "state": {
-            "file": "@ TradingView.md",
+            "file": "Pine Scripts/My Strats/CndtnDvlpr_SprStd_v03.md",
             "mode": "source",
+            "backlinks": true,
             "source": false
           }
         }
@@ -52,7 +41,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "movement",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -65,8 +54,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 207,
-    "collapsed": true
+    "width": 309
   },
   "right": {
     "id": "4cb8383e059d6078",
@@ -82,7 +70,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "@ TradingView.md",
+                "file": "Pine Scripts/My Strats/CndtnDvlpr_SprStd_v03.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -100,10 +88,17 @@
     "width": 300,
     "collapsed": true
   },
-  "active": "1642cc5de2dae3ee",
+  "active": "ad5e9be6234729b7",
   "lastOpenFiles": [
-    "@ TradingView.md",
-    "Pine Scripts/TXT Notes/888 BOT info.md",
-    "Trading Indicators/MACD-KDJ-RSI-WR-DMI Composite Trading System.md"
+    "Pine Scripts/My Strats/CndtnDvlpr_SprStd_v03.md",
+    "3Commas Exports/export_2022-05-23_03-05/export_2022-05-23_03-05.csv",
+    "2022-05-21.md",
+    "! Daily Notes/Recent Notes/2022-05-22.md",
+    "Templates/Daily Notes/Daily Note Template.md",
+    "Templates/Daily Notes/Monthly Note Template.md",
+    "Templates/Daily Notes/Weekly Note Template.md",
+    "PDFs/No-Nonsense-FOREX-Flow-Charts.pdf",
+    "TradingView Pinescript Reference/alertcondition().md",
+    "TradingView Pinescript Reference/bgcolor().md"
   ]
 }

@@ -1,14 +1,21 @@
 #### Definition
 
-[The Average True Range (ATR)](https://www.tradingview.com/scripts/averagetruerange/) is a tool used in technical analysis to measure volatility. Unlike many of today's popular indicators, the ATR is not used to indicate the direction of price. Rather, it is **a metric used solely to measure volatility**, especially volatility caused by price gaps or limit moves.
+[The Average True Range (ATR)](https://www.tradingview.com/scripts/averagetruerange/) is a tool used in technical analysis to measure volatility. 
+Unlike many of today's popular indicators, the ATR is not used to indicate the direction of price. 
+Rather, it is **a metric used solely to measure volatility**, especially volatility caused by price gaps or limit moves.
 
 #### History
 
-[[J. Welles Wilder]] created the ATR and featured it in his book _[[New Concepts in Technical Trading Systems]]_. The book was published in 1978 and also featured several of his now classic indicators such as; The Relative Strength Index, Average Directional Index and the Parabolic SAR. Much like the indicators mentioned, the ATR is still widely used and has great importance in the world of technical analysis.
+[[J. Welles Wilder]] created the ATR and featured it in his book _[[New Concepts in Technical Trading Systems]]_. 
+The book was published in 1978 and also featured several of his now classic indicators such as; 
+The Relative Strength Index, Average Directional Index and the Parabolic SAR. Much like the indicators mentioned, 
+the ATR is still widely used and has great importance in the world of technical analysis.
 
 #### Calculation
 
-To calculate the ATR, the True Range first needs to be discovered. True Range takes into account the most current period high/low range as well as the previous period close if necessary. There are three calculation which need to be completed and then compared against each other. 
+To calculate the ATR, the True Range first needs to be discovered. 
+True Range takes into account the most current period high/low range as well as the previous period close if necessary. 
+There are three calculation which need to be completed and then compared against each other. 
 
 ##### The True Range is the largest of the following:
 

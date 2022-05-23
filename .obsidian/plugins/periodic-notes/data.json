@@ -1,0 +1,33 @@
+{
+  "showGettingStartedBanner": false,
+  "hasMigratedDailyNoteSettings": false,
+  "hasMigratedWeeklyNoteSettings": false,
+  "daily": {
+    "format": "",
+    "template": "Templates/Daily Notes/Daily Note Template.md",
+    "folder": "! Daily Notes/Recent Notes",
+    "enabled": true
+  },
+  "weekly": {
+    "format": "",
+    "template": "Templates/Daily Notes/Weekly Note Template.md",
+    "folder": "! Daily Notes/Recent Notes",
+    "enabled": true
+  },
+  "monthly": {
+    "format": "",
+    "template": "Templates/Daily Notes/Monthly Note Template.md",
+    "folder": "! Daily Notes/Recent Notes",
+    "enabled": true
+  },
+  "quarterly": {
+    "format": "",
+    "template": "",
+    "folder": ""
+  },
+  "yearly": {
+    "format": "",
+    "template": "",
+    "folder": ""
+  }
+}
