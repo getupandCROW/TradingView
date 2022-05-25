@@ -12,5 +12,6 @@
   "csv-obsidian",
   "obsidian-pandoc",
   "obsidian-excalidraw-plugin",
-  "obsidian-columns"
+  "obsidian-columns",
+  "obsidian-linter"
 ]
