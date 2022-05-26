@@ -1,12 +1,13 @@
 ---
-title: {title}
+title: "TradingView"
 alias:
-type: [Article|Tool|
+type: "Tool"
 knowledge-topic: 
-  - 
-keywords: [{keywords:, }]
-URL: {baseURI}
-author: {byline}
+  - "Cryptocurrency"
+  - "Day Trading"
+keywords: "Crypto", "Chart"
+URL: "https://tradingview.com"
+author: 
 publisher: 
 publisher-url: 
 published-date: 
@@ -24,9 +25,9 @@ recommended-by:
 date-created: 2022-05-12 • 00:24:12
 date-modified: 2022-05-12 • 00:24:42
 status: 
-  - current: [new|editing|researching|review]
+  - current: ("editing", "researching")
   - history: 
-    - [[2022-05-12]]: markdownload-extract
+    - [[2022-05-12]]: "markdownload-extract"
 ---
 
 # TradingView
