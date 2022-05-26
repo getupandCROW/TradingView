@@ -9,7 +9,7 @@
         "state": {
           "type": "markdown",
           "state": {
-            "file": "Pine Scripts/My Strats/I--Weighted Signals Dynamic Decisions.md",
+            "file": "Full Auto Trading.md",
             "mode": "source",
             "backlinks": true,
             "source": false
@@ -20,70 +20,85 @@
     "direction": "vertical"
   },
   "left": {
-    "id": "1bcae59c88733107",
-    "type": "mobile-drawer",
+    "id": "a77e505ccd0aa7b6",
+    "type": "split",
     "children": [
       {
-        "id": "94c7de12860e26db",
-        "type": "leaf",
-        "state": {
-          "type": "file-explorer",
-          "state": {}
-        }
-      },
-      {
-        "id": "f961e12ec925c587",
-        "type": "leaf",
-        "state": {
-          "type": "search",
-          "state": {
-            "query": "",
-            "matchingCase": false,
-            "explainSearch": false,
-            "collapseAll": false,
-            "extraContext": false,
-            "sortOrder": "alphabetical"
+        "id": "f8903fc605183d6a",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d0054d90a565b233",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {}
+            }
+          },
+          {
+            "id": "95f7cf91550e95b6",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
           }
-        }
+        ]
       }
     ],
-    "currentTab": 0
+    "direction": "horizontal",
+    "width": 300
   },
   "right": {
-    "id": "ce793d18c480130c",
-    "type": "mobile-drawer",
+    "id": "2445ec597a97b6e8",
+    "type": "split",
     "children": [
       {
-        "id": "e17d1b4a75799956",
-        "type": "leaf",
-        "state": {
-          "type": "backlink",
-          "state": {
-            "file": "Pine Scripts/My Strats/I--Weighted Signals Dynamic Decisions.md",
-            "collapseAll": false,
-            "extraContext": false,
-            "sortOrder": "alphabetical",
-            "showSearch": false,
-            "searchQuery": "",
-            "backlinkCollapsed": false,
-            "unlinkedCollapsed": true
+        "id": "5b42aa94b9a2e3c4",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "5ec202cee7a0b6d4",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Full Auto Trading.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
           }
-        }
+        ]
       }
     ],
-    "currentTab": 0
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
   },
   "active": "ad5e9be6234729b7",
   "lastOpenFiles": [
-    "Pine Scripts/My Strats/I--Weighted Signals Dynamic Decisions.md",
-    "Pine Scripts/My Strats/Indicator Testing Script.md",
-    "Templates/Untitled.md",
-    "Pine Scripts/My Strats/CndtnDvlpr_SprStd_v03.md",
-    "3Commas Exports/export_2022-05-23_03-05/export_2022-05-23_03-05.csv",
-    "2022-05-21.md",
-    "! Daily Notes/Recent Notes/2022-05-22.md",
-    "Templates/Daily Notes/Daily Note Template.md",
-    "Templates/Daily Notes/Monthly Note Template.md",
-    "Templates/Daily Notes/Weekly Note Template.md"
+    "Full Auto Trading.md",
+    "@ Strategy Workbench.md",
+    "Personal Strats/I--Weighted Signals Dynamic Decisions.md",
+    "Trading Indicators/True Strength Index (TSI).md",
+    "@ TradingView.md",
+    "Pinescripts/I--CompoundConditions.md",
+    "Pinescripts/Options Galore.md",
+    "Trading Indicators/ADR%-ATR-LoD distribution Table.md",
+    "Trading Strategies/Ease of Movement Watcher.md",
+    "Trading Strategies/Technical Ratings Strategy.md"
   ]
 }

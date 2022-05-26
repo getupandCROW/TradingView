@@ -9,41 +9,26 @@
         "state": {
           "type": "markdown",
           "state": {
-            "file": "Pine Scripts/My Strats/Indicator Testing Script.md",
+            "file": "Full Auto Trading.md",
             "mode": "source",
             "backlinks": true,
             "source": false
           }
-        },
-        "group": "672aa0d9ba929f00"
-      },
-      {
-        "id": "bbb155c49b509854",
-        "type": "leaf",
-        "state": {
-          "type": "markdown",
-          "state": {
-            "file": "Pine Scripts/My Strats/Indicator Testing Script.md",
-            "mode": "preview",
-            "backlinks": true,
-            "source": false
-          }
-        },
-        "group": "672aa0d9ba929f00"
+        }
       }
     ],
     "direction": "vertical"
   },
   "left": {
-    "id": "c094cf4193921372",
+    "id": "827cc8cf9de3a698",
     "type": "split",
     "children": [
       {
-        "id": "05abe2cceb3522bb",
+        "id": "2076a51d09bf30f0",
         "type": "tabs",
         "children": [
           {
-            "id": "f2b56d03cf448133",
+            "id": "d51ff32bf6768f51",
             "type": "leaf",
             "state": {
               "type": "file-explorer",
@@ -51,12 +36,12 @@
             }
           },
           {
-            "id": "001782e2a63731cc",
+            "id": "34114691435c6c4e",
             "type": "leaf",
             "state": {
               "type": "search",
               "state": {
-                "query": "movement",
+                "query": "",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -69,24 +54,23 @@
       }
     ],
     "direction": "horizontal",
-    "width": 309,
-    "collapsed": true
+    "width": 300
   },
   "right": {
-    "id": "4cb8383e059d6078",
+    "id": "627353ee742dbeb6",
     "type": "split",
     "children": [
       {
-        "id": "f851c885ddc743ef",
+        "id": "34c1b27c0ccd368a",
         "type": "tabs",
         "children": [
           {
-            "id": "ce9396b6e6574d91",
+            "id": "dd3ab8fd13955c0f",
             "type": "leaf",
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Pine Scripts/My Strats/Indicator Testing Script.md",
+                "file": "Full Auto Trading.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -106,15 +90,15 @@
   },
   "active": "ad5e9be6234729b7",
   "lastOpenFiles": [
-    "Pine Scripts/My Strats/Indicator Testing Script.md",
-    "Templates/Untitled.md",
-    "Pine Scripts/My Strats/CndtnDvlpr_SprStd_v03.md",
-    "3Commas Exports/export_2022-05-23_03-05/export_2022-05-23_03-05.csv",
-    "2022-05-21.md",
-    "! Daily Notes/Recent Notes/2022-05-22.md",
-    "Templates/Daily Notes/Daily Note Template.md",
-    "Templates/Daily Notes/Monthly Note Template.md",
-    "Templates/Daily Notes/Weekly Note Template.md",
-    "PDFs/No-Nonsense-FOREX-Flow-Charts.pdf"
+    "Full Auto Trading.md",
+    "@ Strategy Workbench.md",
+    "Personal Strats/I--Weighted Signals Dynamic Decisions.md",
+    "Trading Indicators/True Strength Index (TSI).md",
+    "@ TradingView.md",
+    "Pinescripts/I--CompoundConditions.md",
+    "Pinescripts/Options Galore.md",
+    "Trading Indicators/ADR%-ATR-LoD distribution Table.md",
+    "Trading Strategies/Ease of Movement Watcher.md",
+    "Trading Strategies/Technical Ratings Strategy.md"
   ]
 }
