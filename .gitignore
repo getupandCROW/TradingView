@@ -1,5 +1,9 @@
 
 *.zip
-Personal Strats/
+Personal Strats
+.obsidian
+.stversions
+.stfolder
 *.csv
 *.pdf
+.obsidian/workspace
