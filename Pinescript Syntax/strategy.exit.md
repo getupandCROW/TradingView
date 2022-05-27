@@ -1,7 +1,9 @@
-# strategy.exit
+# strategy.exit()
 
+## Syntax
 > strategy.exit(id, from_entry, qty, qty_percent, profit, limit, loss, stop, trail_price, trail_points, trail_offset, oca_name, comment, when, alert_message) → void
 
+## About
 - It is a command to exit either a specific entry, or whole market position. 
 - If an order with the same ID is already pending, it is possible to modify the order. 
 - If an entry order was not filled, but an exit order is generated, the exit order will wait till entry order is filled and then the exit order is placed. 
@@ -41,3 +43,5 @@ strategy.exit("exit", "long", profit = 10, loss = 5)
 - **comment** (series string) An optional parameter. Additional notes on the order.
 - **when** (series bool) An optional parameter. Condition of the order. The order is placed if condition is 'true'. If condition is 'false', nothing happens (the previously placed order with the same ID is not cancelled). Default value is 'true'.
 - **alert_message** (series string) An optional parameter which replaces the {{strategy.order.alert_message}} placeholder when it is used in the "Create Alert" dialog box's "Message" field.
+
+Related:: [[strategy.close]]

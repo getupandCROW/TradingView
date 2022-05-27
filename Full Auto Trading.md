@@ -160,7 +160,7 @@ if Signal(3M)
 26. [[Keltner Channels (KC)]]
 27. [[Know Sure Thing (KST)]]
 28. [[KST Oscillator (KST)]]
-29. [[(MACD)]]
+29. [[Moving Average Convergence Divergence (MACD)]]
 30. [[Mass Index (MI)]]
 31. [[Momentum (MOM)]]
 32. [[Money Flow Index (MFI)]]

@@ -1,0 +1,162 @@
+//@version=5
+max_bars = 5000
+indicator("Lowest / Highest From Widget", overlay = true, max_bars_back= max_bars)
+
+
+////////////////////////////// ~~~~~~~~~~~~~~~~~~ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+//                                   INPUTS                                   \\
+////////////////////////////// ~~~~~~~~~~~~~~~~~~ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+high_flag = input.bool(true, "", group= "Line Level Styling", inline= "1")
+high_col  = input.color(color.aqua,   title="Last Seen High", group= "Line Level Styling", inline= "1")
+
+
+low_flag  = input.bool(true, "", group= "Line Level Styling", inline= "2")
+low_col   = input.color(color.maroon, title="Last Seen  Low ", group= "Line Level Styling", inline= "2")
+
+
+in_table_pos = input.string(title="Table Location", defval="Top Right", 
+     options=["Top Right",  "Middle Right",  "Bottom Right", 
+              "Top Center", "Middle Center", "Bottom Center", 
+              "Top Left",   "Middle Left",   "Bottom Left"], 
+     group= "Table Styling", inline= "1")
+     
+in_table_size = input.string(title="Table Sizeâ€ƒâ€ƒ ", defval="Small", 
+     options=["Auto",  "Huge",  "Large", "Normal", "Small", "Tiny"], 
+     group= "Table Styling", inline= "2")
+
+
+table_col = input.color(color.gray,  title=" â€ƒ â€ƒ Table", group= "Table Styling", inline= "1")
+text_col  = input.color(color.white, title="â€ƒâ€ƒâ€ƒText",    group= "Table Styling", inline= "2")
+
+
+// Get Table Position
+table_pos(p) => 
+    switch p
+        "Top Right"     => position.top_right     
+        "Middle Right"  => position.middle_right   
+        "Bottom Right"  => position.bottom_right  
+        "Top Center"    => position.top_center    
+        "Middle Center" => position.middle_center
+        "Bottom Center" => position.bottom_center
+        "Top Left"      => position.top_left      
+        "Middle Left"   => position.middle_left 
+        => position.bottom_left
+
+// Get Table Size
+table_size(s) => 
+    switch s
+        "Auto"   => size.auto   
+        "Huge"   => size.huge   
+        "Large"  => size.large  
+        "Normal" => size.normal 
+        "Small"  => size.small
+        => size.tiny
+
+////////////////////////////// ~~~~~~~~~~~~~~~~~~ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+//                                CALCULATIONS                                \\
+////////////////////////////// ~~~~~~~~~~~~~~~~~~ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+// Find the high level where it's higher than today.
+get_level_high_since()=>
+    num_bars    = 0 
+    time_back   = 0
+    price_level = high
+    
+    max_bar = max_bars >= bar_index ? bar_index : max_bars
+    for i= 1 to max_bar
+        if high[i] >= high 
+            time_back   := time[i]
+            num_bars    := i 
+            price_level := high[i]
+            break 
+
+    [time_back, num_bars, price_level]
+
+
+// Find the low level where it's lower than today. 
+get_level_low_since()=>
+    num_bars    = 0 
+    time_back   = 0
+    price_level = low
+    
+    max_bar = max_bars >= bar_index ? bar_index : max_bars
+    for i= 1 to max_bar
+        if low[i] <= low 
+            time_back   := time[i]
+            num_bars    := i 
+            price_level := low[i]
+            break 
+    
+    [time_back, num_bars, price_level]
+
+
+[high_time, high_num_bars, high_price_lev]= request.security(syminfo.tickerid, 'D', get_level_high_since()) 
+[low_time , low_num_bars , low_price_lev ]= request.security(syminfo.tickerid, 'D', get_level_low_since ()) 
+
+
+////////////////////////////// ~~~~~~~~~~~~~~~~~~ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+//                                   OutPut                                   \\
+////////////////////////////// ~~~~~~~~~~~~~~~~~~ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+// Plot function 
+plot_func(tim, num, level, col) =>
+    string date  = na,   string days   = na,   
+    string price = na,   string change = na
+    
+    line line_level  = na
+    
+    if tim == 0
+        line_level := line.new(time[1], level, time, level, xloc = xloc.bar_time, extend= extend.left, color= col)
+        line.delete(line_level[1])
+        
+        days    := "0"
+        date    := level <= low[1]  ? "ALL TIME LOW" : "ALL TIME HIGH"
+    
+    else
+        line_level := line.new(tim, level, time, level, xloc = xloc.bar_time, color= col)
+        line.delete(line_level[1])
+        
+        days    := str.tostring(math.ceil((time_close - tim) / 86400000)-1) 
+        date    := str.tostring(year(tim))                                                                      + "-" + 
+                   (month(tim)      < 10 ? "0" + str.tostring(month(tim))      : str.tostring(month(tim)))      + "-" + 
+                   (dayofmonth(tim) < 10 ? "0" + str.tostring(dayofmonth(tim)) : str.tostring(dayofmonth(tim)))
+    
+    
+    price   := str.tostring(math.round_to_mintick(level)) 
+    
+    change  := "%" + str.tostring((level - close)/ close * 100, "#.##")
+      
+    [date, days, price, change]
+    
+
+
+// Table
+var tbl = table.new(table_pos(in_table_pos), 5, 3, frame_color=#151715, frame_width=1, 
+         border_width=1, border_color=color.new(color.white, 100))
+
+table_cell(row, desc, date, days, price, change, bg_col, txt_col, size_tbl)=>
+    table.cell(tbl, 0, row, desc,   bgcolor = bg_col, text_color= text_col, text_size= size_tbl)
+    table.cell(tbl, 1, row, date,   bgcolor = bg_col, text_color= text_col, text_size= size_tbl)
+    table.cell(tbl, 2, row, days,   bgcolor = bg_col, text_color= text_col, text_size= size_tbl)
+    table.cell(tbl, 3, row, price,  bgcolor = bg_col, text_color= text_col, text_size= size_tbl)
+    table.cell(tbl, 4, row, change, bgcolor = bg_col, text_color= text_col, text_size= size_tbl)
+
+
+// Columns title
+table.cell(tbl, 0, 0, syminfo.ticker, bgcolor = table_col, text_color= text_col, text_size= table_size(in_table_size))
+table.cell(tbl, 1, 0, "Seen on",      bgcolor = table_col, text_color= text_col, text_size= table_size(in_table_size))
+table.cell(tbl, 2, 0, "Days ago",     bgcolor = table_col, text_color= text_col, text_size= table_size(in_table_size))
+table.cell(tbl, 3, 0, "Price",        bgcolor = table_col, text_color= text_col, text_size= table_size(in_table_size))
+table.cell(tbl, 4, 0, "% Change",     bgcolor = table_col, text_color= text_col, text_size= table_size(in_table_size))
+
+
+// Last Seen High
+if high_flag 
+    [high_date, high_days, high_price, high_change] = plot_func(high_time, high_num_bars, high_price_lev, high_col    )
+    table_cell(1, "High", high_date, high_days, high_price, high_change, high_col, text_col, table_size(in_table_size))
+
+
+// Last Seen Low  
+if low_flag
+    [low_date , low_days , low_price , low_change ] = plot_func(low_time , low_num_bars , low_price_lev , low_col     )
+    table_cell(2, "Low", low_date , low_days , low_price , low_change , low_col  , text_col, table_size(in_table_size))

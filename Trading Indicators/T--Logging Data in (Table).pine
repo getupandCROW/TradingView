@@ -1,0 +1,88 @@
+//@version=4
+study("Logging in PineScript", overlay = true)
+
+////////////
+// INPUTS //
+
+// Pivot Points Input
+leftBars  = input(5, group = "Pivot Points")
+rightBars = input(5, group = "Pivot Points")
+
+log_show      = input(true, title = "Show Log?",               group = "Log")
+log_show_msg  = input(10,   title = "# of message to show",    group = "Log")
+log_offset    = input(0,    title = "# of messages to offset", group = "Log", step = 1)
+
+// LOGGING FUNCTION ///
+
+var bar_arr  = array.new_int(0)
+var time_arr = array.new_string(0)
+var msg_arr  = array.new_string(0)
+var type_arr = array.new_string(0)
+
+log_msg(message, type) => 
+    array.push(bar_arr,  bar_index)
+    array.push(time_arr, tostring(year) + "-" + tostring(month) + "-" + tostring(dayofmonth) + " " + tostring(hour) + ":" + tostring(minute) + ":" + tostring(second))
+    array.push(msg_arr,  message)
+    array.push(type_arr, type)
+
+// PIVOT POINTS //
+
+swh = pivothigh(leftBars, rightBars)
+swl = pivotlow(leftBars, rightBars)
+
+hprice = 0.0
+hprice :=  not na(swh) ? swh : hprice[1]
+
+lprice = 0.0
+lprice := not na(swl) ? swl : lprice[1]
+
+plot(hprice, color = color.green, linewidth = 2)
+plot(lprice, color = color.red,   linewidth = 2)
+
+// Pivot Points Messages //
+
+if (not na(swh))
+    log_msg("New Pivot High: " + tostring(hprice), 'message')
+
+if (not na(swh) and hprice > hprice[1])
+    log_msg("New Pivot Higher High: " + tostring(hprice), 'warning')
+
+if (crossover(close, hprice))
+    log_msg("Pivot High Cross !!", 'error')
+
+if (not na(swl))
+    log_msg("New Pivot Low: " + tostring(lprice), 'message')
+
+if (not na(swl) and lprice < lprice[1])
+    log_msg("New Pivot Lower Low: " + tostring(lprice), 'warning')
+
+if (crossunder(close, lprice))
+    log_msg("Pivot Low Cross !!", 'error')
+
+
+///////////////////////////////
+// Create and fill log table //
+
+var log_tbl = table.new(position.bottom_left, 3, log_show_msg + 1, border_width = 1)
+
+if (barstate.islast and log_show)
+    
+    table.cell(log_tbl, 0, 0, "Bar #",   bgcolor = color.gray, text_size = size.small)
+    table.cell(log_tbl, 1, 0, "Time",    bgcolor = color.gray, text_size = size.small)
+    table.cell(log_tbl, 2, 0, "Message", bgcolor = color.gray, text_size = size.small)
+
+    for i = 1 to log_show_msg
+        arr_i = array.size(msg_arr) - log_show_msg + i - 1 - log_offset
+        
+        if (arr_i < 0)
+            break
+        
+        type = array.get(type_arr, arr_i)
+        
+        msg_color =  type == 'message' ? #cccccc : 
+                     type == 'warning' ? #F5AC4E : 
+                     type == 'error'   ? #DD4224 : na
+    
+        table.cell(log_tbl, 0, i, tostring(array.get(bar_arr, arr_i)), bgcolor = msg_color, text_size = size.small)
+        table.cell(log_tbl, 1, i, array.get(time_arr, arr_i),          bgcolor = msg_color, text_size = size.small)
+        table.cell(log_tbl, 2, i, array.get(msg_arr, arr_i),           bgcolor = msg_color, text_size = size.small)

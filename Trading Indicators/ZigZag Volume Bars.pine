@@ -1,0 +1,133 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © HeWhoMustNotBeNamed
+
+//   __    __            __       __  __                  __       __                        __      __    __              __      _______             __    __                                          __ 
+//  /  |  /  |          /  |  _  /  |/  |                /  \     /  |                      /  |    /  \  /  |            /  |    /       \           /  \  /  |                                        /  |
+//  $$ |  $$ |  ______  $$ | / \ $$ |$$ |____    ______  $$  \   /$$ | __    __   _______  _$$ |_   $$  \ $$ |  ______   _$$ |_   $$$$$$$  |  ______  $$  \ $$ |  ______   _____  ____    ______    ____$$ |
+//  $$ |__$$ | /      \ $$ |/$  \$$ |$$      \  /      \ $$$  \ /$$$ |/  |  /  | /       |/ $$   |  $$$  \$$ | /      \ / $$   |  $$ |__$$ | /      \ $$$  \$$ | /      \ /     \/    \  /      \  /    $$ |
+//  $$    $$ |/$$$$$$  |$$ /$$$  $$ |$$$$$$$  |/$$$$$$  |$$$$  /$$$$ |$$ |  $$ |/$$$$$$$/ $$$$$$/   $$$$  $$ |/$$$$$$  |$$$$$$/   $$    $$< /$$$$$$  |$$$$  $$ | $$$$$$  |$$$$$$ $$$$  |/$$$$$$  |/$$$$$$$ |
+//  $$$$$$$$ |$$    $$ |$$ $$/$$ $$ |$$ |  $$ |$$ |  $$ |$$ $$ $$/$$ |$$ |  $$ |$$      \   $$ | __ $$ $$ $$ |$$ |  $$ |  $$ | __ $$$$$$$  |$$    $$ |$$ $$ $$ | /    $$ |$$ | $$ | $$ |$$    $$ |$$ |  $$ |
+//  $$ |  $$ |$$$$$$$$/ $$$$/  $$$$ |$$ |  $$ |$$ \__$$ |$$ |$$$/ $$ |$$ \__$$ | $$$$$$  |  $$ |/  |$$ |$$$$ |$$ \__$$ |  $$ |/  |$$ |__$$ |$$$$$$$$/ $$ |$$$$ |/$$$$$$$ |$$ | $$ | $$ |$$$$$$$$/ $$ \__$$ |
+//  $$ |  $$ |$$       |$$$/    $$$ |$$ |  $$ |$$    $$/ $$ | $/  $$ |$$    $$/ /     $$/   $$  $$/ $$ | $$$ |$$    $$/   $$  $$/ $$    $$/ $$       |$$ | $$$ |$$    $$ |$$ | $$ | $$ |$$       |$$    $$ |
+//  $$/   $$/  $$$$$$$/ $$/      $$/ $$/   $$/  $$$$$$/  $$/      $$/  $$$$$$/  $$$$$$$/     $$$$/  $$/   $$/  $$$$$$/     $$$$/  $$$$$$$/   $$$$$$$/ $$/   $$/  $$$$$$$/ $$/  $$/  $$/  $$$$$$$/  $$$$$$$/ 
+//                                                                                                                                                                                                          
+//                                                                                                                                                                                                          
+//
+//@version=5
+indicator("Zigzag Volume Bars", max_boxes_count=500)
+import HeWhoMustNotBeNamed/zigzag/14 as zg
+import HeWhoMustNotBeNamed/enhanced_ta/13 as eta
+import HeWhoMustNotBeNamed/arrayutils/17 as pa
+
+length = input.int(5, 'Length', step=5, group='Zigzag')
+
+displayTooltip = 'REGULAR : green bars for upswing and red bars for downswing volume. Moiving average can be applied to this type of display\n\n'+
+                     'PLUS/MINUS - STACKED : both upswing and downswing will have positive and negative volumne bars stacked on each other. If the first bar is green or red depends on stacking style\n\n'+
+                     'PLUS/MINUS - OVERLAPPING : both positive and negative volume bars are shown. But, both starts from zero and overlaps each other.\n\n'+
+                     'PLUS/MINUS - OPPOSITE SIDES : positive volume is shown from 0 to upside whereas negative volume bars are shown from 0 to downwards\n'
+displayType = input.string('regular', 'Bar Style', options=['regular', 'plus/minus - stacked', 'plus/minus - overlapping', 'plus/minus - opposite sides'], group='Display', tooltip=displayTooltip)
+
+stackingTooltop = 'DIRECTION-BASED : Up volume(green) bar is placed first on upswing and down volume(red) bar is placed. first on downswing\n\n'+
+                     'GREEN-FIRST : Up volume(green) bar is always placed first\n\n'+
+                     'RED-FIRST : Down volume(red) bar is always placed first\n\n'+
+                     'HIGHEST-FIRST : Bar with highest portion of volume is placed first\n\n'+
+                     'LOWEST-FIRST : Bar with lowest portion of volume is placed first'
+stackedStyle = input.string('direction-based', 'Stack Style', options=['direction-based', 'green-first', 'red-first', 'highest-first', 'lowest-first'], group='Display', tooltip=stackingTooltop)
+
+//Ma is only applicable for few display styles
+applyMa = input.bool(true, 'Show MA', group='Moving Average', inline='ma')
+maType = input.string('sma', '', options=["sma", "ema", "hma", "rma", "wma"], group='Moving Average', inline='ma')
+maLength = input.int(20, '', step=10, group='Moving Average', inline='ma', tooltip='Moving average is applied only for display types - REGULAR, PLUS/MINUS - OPPOSITE SIDES')
+
+//Volume plot style - boolean flags
+plotDifferentialVolume = displayType != 'regular'
+plotOnDifferentSides = displayType == 'plus/minus - opposite sides'
+overlap = displayType == 'plus/minus - overlapping'
+stacked = displayType == 'plus/minus - stacked'
+displayMaRegular = applyMa and not plotDifferentialVolume
+displayMaBiDirectional = applyMa and plotDifferentialVolume and plotOnDifferentSides
+
+//Stacking style if plot style is stacked bars
+directionalStacking = stackedStyle == 'direction-based'
+greenFirst = stackedStyle == 'green-first'
+redFirst = stackedStyle == 'red-first'
+highestFirst = stackedStyle == 'highest-first'
+lowestFirst = stackedStyle == 'lowest-first'
+
+[zigzagpivots, zigzagpivotbars, zigzagpivotdirs, _, _, _, _, _, _, newPivot, doublePivot] = zg.czigzag(length)
+var volumeArray = array.new_float()
+var uVolumeArray = array.new_float()
+var lVolumeArray = array.new_float()
+var int lastBar = na
+if(array.size(zigzagpivots)>1)
+    currentBar = array.get(zigzagpivotbars, 0)
+    lastBar := array.get(zigzagpivotbars, 1)
+
+    currentDir = array.get(zigzagpivotdirs, 0)
+    
+    zvolumeplus = 0.0
+    zvolumeminus = 0.0
+    for i=lastBar==currentBar? na : lastBar+1 to currentBar-1
+        zvolumeminus += (open[bar_index-i] > close[bar_index-i] ? volume[bar_index-i] : 0)
+        zvolumeplus += (open[bar_index-i] > close[bar_index-i] ? 0 : volume[bar_index-i])
+
+    zvolumeminus += (open[bar_index-currentBar] > close[bar_index-currentBar] ? volume[bar_index-currentBar] : 0)
+    zvolumeplus += (open[bar_index-currentBar] > close[bar_index-currentBar] ? 0 : volume[bar_index-currentBar])
+    
+    zvolumeminus += (open[bar_index-lastBar] > close[bar_index-lastBar] ? volume[bar_index-lastBar] : 0)
+    zvolumeplus += (open[bar_index-lastBar] > close[bar_index-lastBar] ? 0 : volume[bar_index-lastBar])
+    zvolume = zvolumeplus + zvolumeminus
+
+    zvolumeminus := plotOnDifferentSides? -zvolumeminus : zvolumeminus
+    if(plotDifferentialVolume)
+        var box ubar = na
+        var box lbar = na
+        if(lastBar == lastBar[1] and currentBar != lastBar)
+            box.delete(ubar)
+            box.delete(lbar)
+            array.shift(uVolumeArray)
+            array.shift(lVolumeArray)
+        else
+            box.set_right(ubar, lastBar)
+            box.set_right(lbar, lastBar)
+            box.set_bgcolor(ubar, color.new(color.green, 70))
+            box.set_bgcolor(lbar, color.new(color.red, 70))
+        
+        uStart = plotOnDifferentSides or overlap? 0 :
+                     directionalStacking? (currentDir > 0? 0 : zvolumeminus) :
+                     greenFirst ? 0 : redFirst ? zvolumeminus : 
+                     highestFirst ? (zvolumeplus > zvolumeminus ? 0 : zvolumeminus) : 
+                     lowestFirst ? (zvolumeplus > zvolumeminus ? zvolumeminus : 0) : na
+        
+        uEnd = uStart + zvolumeplus
+        
+        lStart = plotOnDifferentSides or overlap? 0 :
+                     directionalStacking? (currentDir > 0? zvolumeplus : 0) :
+                     greenFirst ? zvolumeplus : redFirst ? 0 : 
+                     highestFirst ? (zvolumeplus > zvolumeminus ? zvolumeplus : 0) : 
+                     lowestFirst ? (zvolumeplus > zvolumeminus ? 0 : zvolumeplus) : na
+        lEnd = lStart + zvolumeminus
+        
+        ubar := box.new(left=lastBar, top=uEnd, right=currentBar, bottom=uStart, bgcolor = color.new(color.green, 20))
+        pa.unshift(uVolumeArray, zvolumeplus, maLength)
+
+        lbar := box.new(left=lastBar, top=lEnd, right=currentBar, bottom=lStart, bgcolor = color.new(color.red, 20))
+        pa.unshift(lVolumeArray, zvolumeminus, maLength)
+    else
+        var box vbar = na
+        barColor = currentDir>0? color.green: color.red
+        if(lastBar == lastBar[1] and currentBar != lastBar)
+            box.delete(vbar)
+            array.shift(volumeArray)
+        else
+            box.set_right(vbar, lastBar)
+            box.set_bgcolor(vbar, color.new(barColor[1], 70))
+        vbar := box.new(left=lastBar, top=zvolume, right=currentBar, bottom=0, bgcolor = color.new(barColor, 20))
+        pa.unshift(volumeArray, zvolume, maLength)
+vma = pa.ma(volumeArray, maType, maLength)
+vmaPlus = pa.ma(uVolumeArray, maType, maLength)
+vmaMinus = pa.ma(lVolumeArray, maType, maLength)
+
+plot(displayMaRegular?vma:na, 'Volume moving average')
+plot(displayMaBiDirectional?vmaPlus:na, 'Plus Volume moving average', color=color.green)
+plot(displayMaBiDirectional?vmaMinus:na, 'Minus Volume moving average', color=color.red)

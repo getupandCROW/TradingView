@@ -1,0 +1,98 @@
+//@version=5
+// ══════════════════════════════════════════════════════════════════════════════════════════════════ //
+//# * ══════════════════════════════════════════════════════════════════════════════════════════════
+//# *
+//# * Study       : MACD-X Overlay, More Than MACD
+//# * Author      : © dgtrd
+//# *
+//# * Revision History
+//# *  Release    : Mar 10, 2022 : Initial Release
+//# *
+//# * ══════════════════════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════════════════════════ //
+
+indicator("MACD-X Overlay, More Than MACD by DGT", "MACD-X ʙʏ DGT ☼☾", true, max_lines_count = 500, max_boxes_count = 250, max_bars_back = 500)
+
+macdType      = input.string("MACD-SOURCE", "MACD Calculation Method", options=["MACD-TRADITIONAL", "MACD-AS (HISTOGRAM)", "MACD-LEADER", "MACD-SOURCE"])
+fast_length   = input.int(12, "Fast Length", minval = 1)
+slow_length   = input.int(26, "Slow Length", minval = 1)
+source        = input(close, "Source")
+signal_length = input.int(9, "Signal Smoothing",  minval = 1, maxval = 50)
+sma_source    = input.string("EMA", "Oscillator MA Type" , options=["SMA", "EMA"])
+sma_signal    = input.string("EMA", "Signal Line MA Type", options=["SMA", "EMA"])
+macdSigCross  = input.bool(false, "Display MACD/Signal Corsses")
+highlight     = input.bool(false, "Highlight MACD/Signal Area")
+lookbackLength= input.int(200, 'Overlay Indicator Display Length', minval = 10, maxval = 250) 
+oscPlacement  = input.string('Bottom', 'Placement', options = ['Top', 'Bottom'], inline='VOL')
+oscHight      = 12 - input.int(7, 'Hight' , minval = 1, maxval = 10  , inline='VOL' )
+verticalAdj   = input.int(3, "Vertical Indicator Position", minval = 0, maxval = 10) / 10
+
+ma(s, l, m) => m == "EMA" ? ta.ema(s, l) : ta.sma(s, l)
+
+fast_ma = ma(source, fast_length, sma_source)
+slow_ma = ma(source, slow_length, sma_source)
+macd    = fast_ma - slow_ma
+
+macd := if macdType == "MACD-TRADITIONAL"
+    macd
+else if macdType == "MACD-AS (HISTOGRAM)"
+    macd - ma(macd, signal_length, sma_source)
+else if macdType == "MACD-LEADER"
+    macd + ma(source - fast_ma, fast_length, sma_source) - ma(source - slow_ma, slow_length, sma_source)
+else
+    ma(source - math.avg(fast_ma, slow_ma), signal_length, sma_source)
+
+signal = ma(macd, signal_length, sma_signal)
+hist   = macd - signal
+
+longAlertCondition  = ta.crossover(macd, signal)
+alertcondition(longAlertCondition   , "Long : Early Warning"        , "MACD-X - Not Confirmed Probable Long Trade Opportunity\n{{exchange}}:{{ticker}}->\nPrice = {{close}},\nTime = {{time}}")
+alertcondition(longAlertCondition[1], "Long : Trading Opportunity"  , "MACD-X - Probable Long Trade Opportunity\n{{exchange}}:{{ticker}}->\nPrice = {{close}},\nTime = {{time}}")
+plotshape(macdSigCross ? longAlertCondition : na, "Long" , shape.labelup  , location.belowbar, color.new(color.green, 0), size=size.small , show_last=lookbackLength)
+
+shortAlertCondition = ta.crossunder(macd, signal)
+alertcondition(shortAlertCondition   , "Short : Early Warning"      , "MACD-X - Not Confirmed Probable Short Trade Opportunity\n{{exchange}}:{{ticker}}->\nPrice = {{close}},\nTime = {{time}}")
+alertcondition(shortAlertCondition[1], "Short : Trading Opportunity", "MACD-X - Probable Short Trade Opportunity\n{{exchange}}:{{ticker}}->\nPrice = {{close}},\nTime = {{time}}")
+plotshape(macdSigCross ? shortAlertCondition : na, "Short", shape.labeldown, location.abovebar, color.new(color.red  , 0), size=size.small , show_last=lookbackLength)
+
+var a_lines     = array.new_line()
+var a_hist      = array.new_box()
+var a_fill      = array.new_linefill()
+
+priceHighest    = ta.highest(high, lookbackLength)
+priceLowest     = ta.lowest (low , lookbackLength)
+priceChangeRate = (priceHighest - priceLowest) / priceHighest
+priceLowest    := priceLowest  * (1 - priceChangeRate * verticalAdj)
+priceHighest   := priceHighest * (1 + priceChangeRate * verticalAdj)
+oscHighest      = ta.highest(macd, lookbackLength)
+histColor       = hist >= 0 ? hist[1] < hist ? #006400 : color.green : hist[1] < hist ? color.red : #910000
+
+if barstate.islast
+    if array.size(a_lines) > 0
+        for i = 1 to array.size(a_lines)
+            line.delete(array.shift(a_lines))
+
+    if array.size(a_hist) > 0
+        for i = 1 to array.size(a_hist)
+            box.delete(array.shift(a_hist))
+
+    if array.size(a_fill) > 0
+        for i = 1 to array.size(a_fill)
+            linefill.delete(array.shift(a_fill))
+
+    hightAdj = priceChangeRate / oscHight
+
+    for barIndex = 0 to lookbackLength - 1
+        if array.size(a_lines) < 501
+            array.push(a_hist , box.new (bar_index[barIndex],      oscPlacement == 'Top' ? priceHighest : priceLowest, 
+                                         bar_index[barIndex],     (oscPlacement == 'Top' ? priceHighest : priceLowest) * (1 + hist[barIndex]       / oscHighest * hightAdj), histColor[barIndex], 2))
+            array.push(a_lines, line.new(bar_index[barIndex],     (oscPlacement == 'Top' ? priceHighest : priceLowest) * (1 + macd[barIndex]       / oscHighest * hightAdj), 
+                                         bar_index[barIndex + 1], (oscPlacement == 'Top' ? priceHighest : priceLowest) * (1 + macd[barIndex + 1]   / oscHighest * hightAdj), xloc.bar_index, extend.none, #2962FF, line.style_solid, 1))
+            array.push(a_lines, line.new(bar_index[barIndex],     (oscPlacement == 'Top' ? priceHighest : priceLowest) * (1 + signal[barIndex]     / oscHighest * hightAdj), 
+                                         bar_index[barIndex + 1], (oscPlacement == 'Top' ? priceHighest : priceLowest) * (1 + signal[barIndex + 1] / oscHighest * hightAdj), xloc.bar_index, extend.none, #FF6D00, line.style_solid, 1))
+            if highlight
+                array.push(a_fill, linefill.new(array.get(a_lines, 2 * barIndex), array.get(a_lines, 2 * barIndex + 1), macd[barIndex] > signal[barIndex] ? color.new(#2962FF, 50) : color.new(#FF6D00, 50)))
+
+var table logo = table.new(position.bottom_right, 1, 1)
+if barstate.islast
+    table.cell(logo, 0, 0, '☼☾  ', text_size=size.normal, text_color=color.teal)

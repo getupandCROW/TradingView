@@ -1,0 +1,84 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © QuantNomad
+
+//@version=5
+indicator('All-Time High/Low', shorttitle='ATH/ATL', overlay=true)
+
+////////////
+// INPUTS //
+
+show_ath   = input(true,  "Show All Time High?")
+show_atl   = input(false, "Show All Time Low?")
+show_table = input(true,  "Show table with stats?")
+
+///////////////
+// FUNCTIONS //
+
+// all-time high function
+get_all_time_high() =>
+    h  = 0.0
+    t  = 0
+    h := bar_index == 0 ? high : high > h[1] ? high : h[1]
+    t := bar_index == 0 ? time : high > h[1] ? time : t[1]
+    [h, t]
+
+// all-time low function   
+get_all_time_low() =>
+    l = 0.0
+    t = 0
+    l := bar_index == 0 ? low  : low < l[1] ? low  : l[1]
+    t := bar_index == 0 ? time : low < l[1] ? time : t[1]
+    [l, t]
+
+// getting all-time high/low    
+[ath, ath_dt] = request.security(syminfo.tickerid, 'D', get_all_time_high())
+[atl, atl_dt] = request.security(syminfo.tickerid, 'D', get_all_time_low())
+
+ath_days = math.round((timenow - ath_dt) / 86400000)
+atl_days = math.round((timenow - atl_dt) / 86400000)
+
+// plotting
+if show_ath
+    lATH=line.new(bar_index - 1, ath, bar_index, ath, extend = extend.both, color = color.green)
+    line.delete(lATH[1])
+    
+if show_atl
+    lATL=line.new(bar_index - 1, atl, bar_index, atl, extend = extend.both, color = color.red)
+    line.delete(lATL[1])
+
+if show_table
+    var table ATHtable = table.new(position.bottom_right, 6, 3, frame_color = color.gray, bgcolor = color.gray, border_width = 1, frame_width = 1, border_color = color.white)
+
+    ath_time = str.tostring(year(ath_dt)) + "-" + str.tostring(month(ath_dt)) + "-" + str.tostring(dayofmonth(ath_dt))
+    atl_time = str.tostring(year(atl_dt)) + "-" + str.tostring(month(atl_dt)) + "-" + str.tostring(dayofmonth(atl_dt))
+
+    // Header
+    table.cell(ATHtable, 0, 0, "",         bgcolor = #cccccc)
+    table.cell(ATHtable, 1, 0, "When?",    bgcolor = #cccccc)
+    table.cell(ATHtable, 2, 0, "Days ago", bgcolor = #cccccc)
+    table.cell(ATHtable, 3, 0, "Price",    bgcolor = #cccccc)
+    table.cell(ATHtable, 4, 0, "% away",   bgcolor = #cccccc)
+    table.cell(ATHtable, 5, 0, "$ away",   bgcolor = #cccccc)
+    
+    if (show_ath)
+        // ATH
+        table.cell(ATHtable, 0, 1, "ATH",                                                  bgcolor = #cccccc)
+        table.cell(ATHtable, 1, 1, ath_time,                                               bgcolor = color.new(color.green, transp = 50))
+        table.cell(ATHtable, 2, 1, str.tostring(ath_days),                                 bgcolor = color.new(color.green, transp = 50))
+        table.cell(ATHtable, 3, 1, str.tostring(ath, format.mintick),                      bgcolor = color.new(color.green, transp = 50))
+        table.cell(ATHtable, 4, 1, str.tostring(((ath / close) - 1) * 100 , "#.##") + "%", bgcolor = color.new(color.green, transp = 50))
+        table.cell(ATHtable, 5, 1, str.tostring(ath - close , format.mintick),             bgcolor = color.new(color.green, transp = 50))
+    
+    if (show_atl)
+        // ATL
+        table.cell(ATHtable, 0, 2, "ATL",                                                  bgcolor = #cccccc)
+        table.cell(ATHtable, 1, 2, atl_time,                                               bgcolor = color.new(color.red, transp = 50))
+        table.cell(ATHtable, 2, 2, str.tostring(atl_days),                                 bgcolor = color.new(color.red, transp = 50))
+        table.cell(ATHtable, 3, 2, str.tostring(atl, format.mintick),                      bgcolor = color.new(color.red, transp = 50))
+        table.cell(ATHtable, 4, 2, str.tostring(((atl / close) - 1) * 100 , "#.##") + "%", bgcolor = color.new(color.red, transp = 50))
+        table.cell(ATHtable, 5, 2, str.tostring(atl - close, format.mintick),              bgcolor = color.new(color.red, transp = 50))
+
+// alerts
+alertcondition(ta.crossover(high, ath), 'All-time High!', 'All-time High!')
+alertcondition(ta.crossunder(low, atl), 'All-time Low!',  'All-time Low!')
+

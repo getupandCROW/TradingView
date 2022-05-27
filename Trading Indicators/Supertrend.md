@@ -49,7 +49,7 @@ When the price falls below the indicator curve, it turns red and indicates a dow
 
 #### Summary
 
-The Supertrend helps you make the right trading decisions. However, there are times when it generates false signals. Therefore, it is best to use the right combination of several indicators. Like any other indicator, Supertrend works best when used with other indicators such as [[MACD]], [[Parabolic SAR]], or [[RSI]].
+The Supertrend helps you make the right trading decisions. However, there are times when it generates false signals. Therefore, it is best to use the right combination of several indicators. Like any other indicator, Supertrend works best when used with other indicators such as [[Moving Average Convergence Divergence (MACD)]], [[Parabolic SAR]], or [[RSI]].
 
 
 <div class="rich-link-card-container"><a class="rich-link-card" href="https://www.tradingview.com/scripts/macd/" target="_blank">

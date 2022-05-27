@@ -1,0 +1,193 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © KioseffTrading
+
+//@version=5
+indicator("Short Volume Stamper [Kioseff Trading]", precision = 12, overlay = true, max_bars_back = 4000, max_lines_count = 500, max_labels_count = 500)
+sVolType = input.string(defval = "QUANDL", title = "Short Vol Data Source", options = ["QUANDL", "TradingView"])
+sVolNASDAQ = request.quandl("FINRA/FNSQ_" + syminfo.ticker, index = 0, ignore_invalid_symbol = true)
+sVolNYSE = request.quandl("FINRA/FNYX_" + syminfo.ticker, index = 0, ignore_invalid_symbol = true)
+tvsVol = request.security(syminfo.ticker + "_SHORT_VOLUME", "D", close, ignore_invalid_symbol = true)
+runtime = input.string(defval = "On", title = "Show Runtime Error?", options = ["On", "Off"])
+instructions = input.string(defval = "Off", title = "Instructions?", options = ["On", "Off"])
+totalShort = 0.0
+totalShort := if sVolType == "QUANDL"
+    sVolNASDAQ + sVolNYSE
+else
+    tvsVol
+
+vHigh = ta.highest(totalShort, 100)
+preciseHigh = ta.highest(high, 11)
+preciseLow = ta.lowest(low, 11) * .90
+var float x = 0.0
+var float x1 = 0.0
+var float x2 = 0.0
+var int y = 0
+var int y1 = 0
+var int counter = 0
+
+if vHigh > vHigh[1]
+    x := totalShort[4] + totalShort[3] + totalShort[2] + totalShort[1] + totalShort + totalShort[5]
+    y := bar_index
+    x2 := volume[4] + volume[3] + volume[2] + volume[1] + volume + volume[5]
+    counter := 1
+
+if bar_index - y == 5
+    x := x[1] + totalShort[4] + totalShort[3] + totalShort[2] + totalShort[1] 
+    x2 := x2[1] + volume[4] + volume[3] + volume[2] + volume[1] 
+if bar_index - y == 6
+    x := 0
+    x2 := 0
+    counter := 0
+
+calc(s, t) =>
+    div = s / t
+    fin = div * 100
+    fin
+
+pCalc = calc(x[1], x2[1])
+
+sSMA = ta.sma(totalShort, 20)
+vSMA = ta.sma(volume, 20)
+svrSMA = ta.sma(calc(totalShort, volume), 20)
+
+var label m = na
+var line n = na
+var line n1 = na
+var line n2 = na
+var line n3 = na
+var float nfloat =0.0
+var linefill nfill = na
+vwapAvg = (ta.vwap[2] + ta.vwap[3] + ta.vwap[4] + ta.vwap[5] + ta.vwap[6] + ta.vwap[7] + ta.vwap[8] + ta.vwap[9] + ta.vwap[10] + ta.vwap[11]) / 10
+var int countern = 0
+
+if x[1] > 0 and x == 0
+    nfloat := vwapAvg
+    countern += 1
+    m := label.new(bar_index - 6, preciseHigh * 1.05, text = "10 Session Aggregate Short Volume: " + str.tostring(x[1], format.volume) + "\n10 Session Aggregate Total Volume: " + str.tostring(x2[1], format.volume)  
+         +"\n Short Volume % Of Total Volume: " + str.tostring(calc(x[1], x2[1]), format.percent) + "\nVolume Weighted Average Price Area: $" + str.tostring(nfloat, format.mintick) + "\n10 Session Short Vol. Approximate Dollar Value: $" + str.tostring(nfloat * x[1], format.volume), color = pCalc >= 20.00 ? color.new(color.red, 50) : color.new(color.green, 50), textcolor = color.white, style = label.style_label_down)
+    n := line.new(bar_index - 11, preciseHigh, bar_index - 2, preciseHigh, color = pCalc >= 20.00 ? color.red : color.green, width = 2)
+    n1 := line.new(bar_index - 11, preciseLow,bar_index - 2, preciseLow, color = pCalc >= 20.00 ? color.red : color.green, width = 2) 
+    n2 := line.new(bar_index - 11, preciseLow, bar_index -11, preciseHigh, color =pCalc >= 20.00 ? color.red : color.green, width = 2)
+    n3 := line.new(bar_index - 2, preciseLow, bar_index -2, preciseHigh, color = pCalc >= 20.00 ? color.red : color.green, width = 2)
+    nfill := linefill.new(n2, n3, color = pCalc >= 20.00 ? color.new(color.red, 90) : color.new(color.green, 90))
+
+if countern == 4
+    countern := 0
+
+pHigh = na(ta.pivothigh(high, 25, 25)) ? false : true
+
+var float ofloat1 = 0.0
+var float ofloat2 = 0.0
+var float ofloat3 = na
+var float ofloat4 = 0.0 
+var line o1 = na
+var line o2 = na
+var line o3 = na
+var line o4 = na
+var linefill o5 = na
+var label o6 = na
+
+lowN = ta.lowest(low, 7)[22]
+if pHigh == true and ta.barssince(ta.change(counter)) > 29
+    ofloat1 := volume[23]  + volume[24]  + volume[25]  + volume[26]  + volume[27]  + volume[28] 
+    ofloat2 :=  totalShort[23] + totalShort[24] + totalShort[25] + totalShort[26] + totalShort[27] + totalShort[28]
+    ofloat3 := (ta.vwap[23] + ta.vwap[24] + ta.vwap[25] + ta.vwap[26] + ta.vwap[27] + ta.vwap[28]) / 6
+    ofloat4 := (ofloat2 / ofloat1) * 100
+    o1 := line.new(bar_index - 28, high[25], bar_index - 23, high[25], style = line.style_solid, color = ofloat4 >= 20.0 ? color.red : color.green, width = 2)
+    o2 := line.new(bar_index - 28, lowN, bar_index - 23, lowN, style = line.style_solid, color = ofloat4 >= 20.0 ? color.red : color.green, width = 2)
+    o3 := line.new(bar_index - 28, high[25], bar_index - 28, lowN, style = line.style_solid, color = ofloat4 >= 20.0 ? color.red : color.green, width = 2)
+    o4 := line.new(bar_index - 23, high[25], bar_index - 23, lowN, style = line.style_solid, color = ofloat4 >= 20.0 ? color.red : color.green, width = 2)
+    o5 := linefill.new(o3, o4, color = ofloat4 >= 20.00 ? color.new(color.red, 90) : color.new(color.green, 90))
+    countern += 1
+    o6 := label.new(bar_index - 25, high[25] * 1.05 , text = "6 Session Aggregate Short Volume: " + str.tostring(ofloat2, format.volume) + "\n6 Session Aggregate Total Volume: " + str.tostring(ofloat1, format.volume)  
+         +"\n Short Volume % Of Total Volume: " + str.tostring(ofloat4, format.percent) + "\nVolume Weighted Average Price Area: $" + str.tostring(ofloat3, format.mintick) +"\n6 Session Short Vol. Approximate Dollar Value: $" + str.tostring(ofloat3 * ofloat2, format.volume), color = ofloat4 >= 20.00 ? color.new(color.red, 50) : color.new(color.green, 50), textcolor = color.white, style =  label.style_label_down)
+
+var float f1 = 0.0 
+var float f2 = 0.0 
+var float t = 0.0
+var float t1 = 0.0
+var float t2 = 0.0
+var float f4 = 0.0
+var float f5 = 0.0 
+t24High = ta.highest(high, 504)
+
+if t24High == t24High[1] and totalShort > 0
+    f1 := totalShort[1]
+if t24High == t24High[1] and f1 > 0
+    f1 := f1[1] + f1
+    f4 := ta.vwap * totalShort
+    f4 := f4 + f4[1]
+    f5 := ta.vwap * volume
+    f5 := f5[1] + f5
+
+if ta.change(t24High) and totalShort > 0 
+    f1 := 0
+    t := year(time)
+    t1 := month(time)
+    t2 := dayofmonth(time)
+    f4 := 0
+    f4 := (ta.vwap * totalShort)
+    f5 := 0
+    f5 := (ta.vwap * volume)
+if t24High == t24High[1] and totalShort > 0 
+    f2 := volume[1]
+if t24High == t24High[1]and f2 > 0
+    f2 := f2[1] + f2
+if ta.change(t24High) and totalShort > 0
+    f2 := 0
+
+finf1 = f1 + totalShort
+finf2 = f2 + volume
+finf3 = calc(finf1, finf2)
+finf4 = ta.vwap * finf2
+
+var float floatv = 0.0
+var int intv = 0
+var line lineV = na
+var label labelV = na
+if ta.barssince(t24High > t24High[1]) == 1 
+    floatv := high[1]
+    intv := bar_index[1]
+    line.delete(lineV[1])
+    lineV := line.new(intv, floatv, bar_index, high, color = finf3 >= 20.0 ? color.new(#ff0400, 50) : color.new(#03ff00, 50), width = 2)
+if high > t24High[1]
+    line.delete(lineV[1])
+if bar_index[1] < bar_index
+    line.delete(lineV)
+    lineV := line.new(intv, floatv, bar_index, high, color = finf3 >= 20.0 ? color.new(#ff0400, 50) : color.new(#03ff00, 50), width = 2)
+    label.delete(labelV[1])
+    labelV := label.new(bar_index, high * 1.02, text = "Total Short Volume Since 2-Year High: " + str.tostring(finf1, format.volume) + " (" + str.tostring(t) + "/" + str.tostring(t1) + "/" + str.tostring(t2) + ")" + "\nApproximate Dollar Value Of Short Vol. Since 2-Year High: $" + str.tostring(f4, format.volume) +
+         "\nTotal Volume Since 2-Year High: " + str.tostring(finf2, format.volume) + "\n Dollar Value Of Total Volume Minus Total Short Volume: $" + str.tostring(f5 - f4, format.volume) + "\nShort Volume Ratio Since 2-Year High: " + str.tostring(finf3, format.percent), color = finf3 >= 20.0 ? color.new(#ff0400, 50) : color.new(#03ff00, 50), textcolor = color.white)
+
+
+logicalOpString = totalShort > sSMA ? " > " : totalShort == sSMA ? "==" : " < "
+logicalOpString1 = volume > vSMA ? " > " : volume == vSMA ? "==" : " < "
+logicalOpString2 = calc(totalShort, volume) > svrSMA ? " > " : calc(totalShort, volume) == svrSMA ? "==" : " < "
+
+table1 = table.new(position.bottom_right, 9, 9, bgcolor = color.new(color.white, 100))
+if barstate.islast
+    table.cell(table1, 0 ,0, text = "Short Volume: " + str.tostring(totalShort, format.volume) + logicalOpString + "(" + str.tostring(sSMA, format.volume) + " Avg.)", text_color = color.white)
+    table.cell(table1, 0, 1, text = "Total Volume: " + str.tostring(volume, format.volume) + logicalOpString1 + "(" + str.tostring(vSMA, format.volume) + " Avg.)", text_color = color.white)
+    table.cell(table1, 0, 2, text = "Short Volume Ratio: " + str.tostring(calc(totalShort, volume), format.percent) + logicalOpString2 + "(" + str.tostring(svrSMA, format.percent) + " Avg.)", text_color = color.white)
+
+if timeframe.isintraday and runtime == "Off" and barstate.islast
+    table.cell(table1, 0, 3, text = "SHORT VOLUME IS REPORTED DAILY! \nNOT TICK BY TICK! \nINTRASESSION CALCULATIONS ARE INCORRECT!", text_color = color.red)
+if timeframe.isintraday and runtime == "On" and barstate.islast
+    runtime.error("SHORT VOLUME IS REPORTED DAILY! \nNOT TICK BY TICK! \nINTRASESSION CALCULATIONS WILL BE INCORRECT!")
+if barstate.islast and na(totalShort) and sVolType == "QUANDL" and year(time) <= 2013 and syminfo.prefix == "NASDAQ" or na(totalShort) and sVolType == "QUANDL" and year(time) <= 2013 and syminfo.prefix == "NYSE" or na(totalShort)  and sVolType == "QUANDL" and year(time) <= 2013 and syminfo.prefix == "AMEX" or na(totalShort) and year(time) <= 2013 and syminfo.prefix == "BATS"  and sVolType == "QUANDL" 
+    table.cell(table1, 0, 4, text = "SHORT VOLUME DATA FOR THIS EXCHANGE IS UNAVAILBLE FOR THIS PERIOD", text_color = color.red)
+if barstate.islast and na(totalShort) and sVolType == "TradingView" and year(time) <= 2018 and syminfo.prefix == "NASDAQ" or na(totalShort) and sVolType == "TradingView" and year(time) <= 2018 and syminfo.prefix == "NYSE" or na(totalShort) and sVolType == "TradingView" and year(time) <= 2018 and syminfo.prefix == "AMEX" or na(totalShort) and year(time) <= 2018 and syminfo.prefix == "BATS" and sVolType == "TradingView" 
+    table.cell(table1, 0, 4, text = "SHORT VOLUME DATA FOR THIS PERIOD IS NOT PROVIDED BY TRADINGVIEW", text_color = color.red)
+if barstate.islast and na(totalShort)
+    table.cell(table1, 0, 4, text = "SHORT VOLUME FOR THIS EXCHANGE IS NOT REPORTED BY FINRA", text_color = color.red)
+
+if instructions == "On" and barstate.islast
+    table.cell(table1, 0,5, text = "When Short Volume Is Aggregated for 10 Sessions: \nA New 1-Year High in Short Volume Was Achieved (The Session the Label Is Pointing Towards)." 
+         + "\n" + "\nWhen Short Volume Is Aggregated for 6 Sessions: \n a Pivot High Point Was Reached (Highest High Over 51 Sessions)." + "\n" +"\nThe Continually Updating Line Connects the 2-Year High to the Current Session’s High. \nThe Total Short Volume Between the Two Sessions Is Calculated, in Addition to Other Measurements."
+          ,
+         text_color = color.blue)
+    table.cell(table1, 0,6, text = "Red Labels, Red Boxes, and Red Lines Indicate a Short Volume Ratio Greater Than or Equal to 20% Over the Corresponding Period.", text_color = color.red)
+    table.cell(table1, 0,7, text =  "Green Labels, Green Boxes, and Green Lines Indicate a Short Volume Ratio Less Than 20% Over the Corresponding Period. ", text_color = color.green)
+
+if timeframe.ismonthly or timeframe.isweekly and runtime == "Off" and barstate.islast
+    runtime.error("ERROR: TRY DAILY CHART!")
