@@ -6,4 +6,4 @@ Personal Strats
 .stfolder
 *.csv
 *.pdf
-.obsidian/workspace
+.obsidian/*
