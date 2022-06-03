@@ -3,7 +3,7 @@ Backtesting:: [[@ TradingView]]
 Broker:: [[FTX]]
 TradingBots:: [[3Commas]]
 
----
+***
 
 ```js
 //@version=5
@@ -18,6 +18,8 @@ while counter > 0
 
 plot(factorial)
 ```
+
+***
 
 ```js
 var a = close
@@ -35,6 +37,8 @@ plot(a)
 plot(b)
 plot(c)
 ```
+
+*** 
 
 ```js
 //@version=5
@@ -66,3 +70,35 @@ if ZL > close and ZL[1] > ZL[0]   // positive and decreasing
 if ZL < close and ZL[1] > ZL[0]   // negative and decreasing
 ```
 
+***
+
+```js
+// === BUY LONGS
+//if validsomOpnLngPos
+//    // Enter 1st Long Position with largest TP and SL
+//    if maxDn34
+//        if allRising
+//            strategy.entry(id = "Long Entry 1", direction = strategy.long, qty = 75, comment = "", alert_message = "")
+//else if somLngIsActive
+//    // Enter 2nd Long Position with smaller TP and SL
+//    if maxDn34
+//        if allRising
+//            strategy.entry(id = "Long Entry 2", direction = strategy.long, qty = 75, comment = "", alert_message = "")
+//else if somOpnLngPos
+//    // Enter 1st Long Position with largest TP and SL
+//    if maxDn34
+//        if allRising
+//            strategy.entry(id = "Long Entry 1", direction = strategy.long, qty = 75, comment = "", alert_message = "")
+
+var float priceClose = close
+var float priceLow = low
+var float priceHigh = high
+var float tp1 = (inpTP * .01 * priceHigh) + priceHigh // limit in strategy.exit
+var float sl1 = priceLow - (inpSL * .01 * priceLow) // stop in strategy.exit
+var float tpts1 = (inpTPTS * .01 * tp1) + tp1 // limit in strategy.exit
+var float slts1 = sl1 - (inpSLTS * .01 * sl1) // stop in strategy.exit
+var bool tp1Passed = high > tp1
+var bool sl1Passed = low < sl1
+var bool tpts1Reached = high > tpts1
+var bool slts1Reached = low < slts1
+```
