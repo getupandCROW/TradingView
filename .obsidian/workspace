@@ -9,7 +9,7 @@
         "state": {
           "type": "markdown",
           "state": {
-            "file": "@ TradingView.md",
+            "file": "NEBO  Slyde King.md",
             "mode": "source",
             "backlinks": true,
             "source": false
@@ -20,15 +20,15 @@
     "direction": "vertical"
   },
   "left": {
-    "id": "d968d626e36c82e7",
+    "id": "202c7ba728b0fa16",
     "type": "split",
     "children": [
       {
-        "id": "c7d226ce1bce2190",
+        "id": "67d2769beed4297c",
         "type": "tabs",
         "children": [
           {
-            "id": "76e705628a508cb9",
+            "id": "cd4e7729d4779732",
             "type": "leaf",
             "state": {
               "type": "file-explorer",
@@ -36,7 +36,7 @@
             }
           },
           {
-            "id": "773121fef424d71e",
+            "id": "bd6a30b1dcee30ad",
             "type": "leaf",
             "state": {
               "type": "search",
@@ -57,20 +57,20 @@
     "width": 300
   },
   "right": {
-    "id": "983ded51938d97a6",
+    "id": "ac10a76442173fe2",
     "type": "split",
     "children": [
       {
-        "id": "dd04756135c8a998",
+        "id": "f193fe273c1363b3",
         "type": "tabs",
         "children": [
           {
-            "id": "603e2c7138184a65",
+            "id": "7ae105fb7f3dee6b",
             "type": "leaf",
             "state": {
               "type": "backlink",
               "state": {
-                "file": "@ TradingView.md",
+                "file": "NEBO  Slyde King.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -90,6 +90,7 @@
   },
   "active": "7c7238617831fe48",
   "lastOpenFiles": [
+    "NEBO  Slyde King.md",
     "@ TradingView.md",
     "Untitled.md",
     "! Daily Notes/Recent Notes/2022-06-02.md",
@@ -98,7 +99,6 @@
     "Vervoort Smoothed Bolinger Bands (VMBB%).md",
     "Trading Indicators/Non Parametric Adaptive Moving Average Based On Volume (SVAMA).md",
     "Trading Indicators/The Svan Neck.md",
-    "Trading Indicators/I--Simple Volume Analyzer (SVA).md",
-    "Personal Strats/Archive/=TODO.md"
+    "Trading Indicators/I--Simple Volume Analyzer (SVA).md"
   ]
 }

@@ -1,0 +1,39 @@
+//@version=2
+study("Sentiment Zone Oscillator",shorttitle="SZO_SH",overlay=false)
+len = input(14,title="Short Period")
+len1 = input(30,title="Long Period")
+pf = input(14,title="Price Filtering")
+perc = input(95,title="SZO Percent")
+avglen = input(14,title="EMA SZO Length")
+
+pr = sma(close,pf)
+
+usevalues = pr>pr[1]?1:-1
+alpha = 2/(1+len)
+
+worktema1 = nz(worktema1[1])+alpha*(usevalues-nz(worktema1[1]))
+worktema2 = nz(worktema2[1])+alpha*(worktema1-nz(worktema2[1]))
+worktema3 = nz(worktema3[1])+alpha*(worktema2-nz(worktema3[1]))
+mytema = worktema3+3*(worktema1-worktema2)
+
+result = 100*mytema
+
+szo = result/len
+
+hi = 0
+lo = 0
+
+for i=1 to len1
+    hi := szo[i]>hi?szo[i]:hi
+    lo := szo[i]<lo?szo[i]:lo
+
+rn = hi-lo
+upz = lo+rn*perc/100
+dnz = hi-rn*perc/100
+
+avg = ema(szo,avglen)
+
+plot(szo,title="Sentiment Zone Oscillator",linewidth=2,color=green)
+plot(avg,title="EMA SZO",linewidth=2,color=red)
+plot(upz,title="Up Channel",color=blue)
+plot(dnz,title="Down Channel",color=orange)
